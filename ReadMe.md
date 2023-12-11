@@ -1,7 +1,9 @@
 # lib_dynamixel
 
-Robotis社の[Dynamixel](https://e-shop.robotis.co.jp/list.php?c_id=89)をROSから制御するためのライブラリ.
-基本的にROSで使うことを想定している．
+Robotis社の[Dynamixel](https://e-shop.robotis.co.jp/list.php?c_id=89)をROSから制御するためのライブラリ.  
+基本的にROSで使うことを想定しているので，単体でのビルドは試してない．
+
+```
 
 ## 初期設定と注意事項
 
