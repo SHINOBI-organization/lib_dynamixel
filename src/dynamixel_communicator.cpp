@@ -1,4 +1,4 @@
-#include "dynamixel_serialport.h"
+#include "dynamixel_communicator.h"
 #include <stdio.h>
 
 // #define DXL_LOBYTE(w) ((uint8_t)(((uint64_t)(w)) & 0xff))
