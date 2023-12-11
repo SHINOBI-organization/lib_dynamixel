@@ -34,10 +34,6 @@ class DynamixelComunicator {
   bool error_last_read(){ return error_last_read_; }
 
   string port_name(){ return string(port_name_); }
-  template <typename T>
-  T ValueToIntData(double value, DynamixelParameter dp, T type) {
-    return value/dp.value_per_bit();
-  }
 
   bool OpenPort();
   bool ClosePort();
