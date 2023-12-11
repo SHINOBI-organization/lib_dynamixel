@@ -1,11 +1,9 @@
-
-#ifndef FUHGA_MASTER_SRC_DYNAMIXEL_H_
-#define FUHGA_MASTER_SRC_DYNAMIXEL_H_
+#ifndef DYNAMIXEL_COMMUNICATOR_H_
+#define DYNAMIXEL_COMMUNICATOR_H_
 
 #include <vector>
 #include <cmath>
 #include <string>
-#include <ros/ros.h>
 
 #include "download/port_handler.h"
 #include "dynamixel_parameters.h"
@@ -42,6 +40,10 @@ class Dynamixel {
 
   bool error_last_read(){ return error_last_read_; }
 
+  std::string get_port_name(){
+    return std::string(port_name_);
+  }
+
   template <typename T>
   T ValueToIntData(double value, DynamixelParameter dp, T type) {
     return value/dp.value_per_bit();
@@ -54,6 +56,8 @@ class Dynamixel {
   bool Ping(uint8_t servo_id);
 
   void Write(uint8_t servo_id, DynamixelParameter dp, int64_t data_int);
+  // void clearMultiTurn(uint8_t servo_id);
+  // unsigned short updateCRC(uint16_t crc_accum, uint8_t *data_blk_ptr, uint16_t data_blk_size);
   int64_t Read(uint8_t servo_id, DynamixelParameter dp);
   void SyncWrite(uint8_t num_servo, uint8_t servo_id_list[], DynamixelParameter dp, int64_t data_int_list[]);
   uint8_t SyncRead(uint8_t num_servo, uint8_t servo_id_list[], DynamixelParameter dp, int64_t data_int_list[], uint8_t read_id_list[]);
@@ -63,7 +67,7 @@ class Dynamixel {
   void EncodeDataWrite(DynamixelDataType type, int64_t data_int);
   int64_t DecodeDataRead(DynamixelDataType type);
 
-  const char * port_name_;
+  const char *port_name_;
   PortHandler *port_handler_;
   uint32_t baudrate_;
   uint8_t status_return_level_;
@@ -74,4 +78,4 @@ class Dynamixel {
 };
 
 
-#endif /* FUHGA_MASTER_SRC_DYNAMIXEL_H_ */
+#endif /* DYNAMIXEL_COMMUNICATOR_H_ */
