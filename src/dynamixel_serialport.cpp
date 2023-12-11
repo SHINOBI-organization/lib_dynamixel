@@ -27,7 +27,7 @@ static const uint8_t COM_ERROR_DATA_LIMIT  = 5;
 static const uint8_t COM_ERROR_ACCESS      = 6;
 static const uint8_t COM_ERROR_ALERT       = 7;
 
-uint16_t Dynamixel::CalcChecksum(uint8_t data[], uint8_t length) {
+uint16_t DynamixelComunicator::CalcChecksum(uint8_t data[], uint8_t length) {
   uint16_t crc_accum = 0;
   uint16_t i;
   uint16_t crc_table[256] = {0x0000,
@@ -83,7 +83,7 @@ uint16_t Dynamixel::CalcChecksum(uint8_t data[], uint8_t length) {
  * @param int64_t data_int 書き込む値．int型に変換済み．どの型にも対応できるようにint64_t
  * @return void
  */
-void Dynamixel::EncodeDataWrite(DynamixelDataType type, int64_t data_int) {
+void DynamixelComunicator::EncodeDataWrite(DynamixelDataType type, int64_t data_int) {
   switch (type) {
     case TYPE_INT8 : {
       int8_t d = int8_t(data_int);
@@ -131,7 +131,7 @@ void Dynamixel::EncodeDataWrite(DynamixelDataType type, int64_t data_int) {
  * @param DynamixelDataType type 変換後のデータ型
  * @return (int64_t) 変換後の値．どの型にも対応できるようにint64_t
  */
-int64_t Dynamixel::DecodeDataRead(DynamixelDataType type) {
+int64_t DynamixelComunicator::DecodeDataRead(DynamixelDataType type) {
   switch (type) {
     case TYPE_INT8 : {
       int8_t data_int = 0;
@@ -181,7 +181,10 @@ int64_t Dynamixel::DecodeDataRead(DynamixelDataType type) {
   return 0;
 }
 
-bool Dynamixel::OpenPort() {
+/** @fn
+ * @brief port_handler_を用いて，ポートを開く
+ */
+bool DynamixelComunicator::OpenPort() {
   if (port_handler_->openPort()) {
     printf("Succeeded to open the port : %s!\n", port_name_);
   } else {
@@ -198,13 +201,20 @@ bool Dynamixel::OpenPort() {
   }
 }
 
-bool Dynamixel::ClosePort() {
+/** @fn
+ * @brief port_handler_を用いて，ポートを閉じる
+ */
+bool DynamixelComunicator::ClosePort() {
   port_handler_->closePort();
   printf("Close port : %s!\n", port_name_);
   return true;
 }
 
-void Dynamixel::Reboot(uint8_t servo_id) {
+/** @fn
+ * @brief 指定したDynamixelをリブートする
+ * @param uint8_t servo_id 対象のID
+ */
+void DynamixelComunicator::Reboot(uint8_t servo_id) {
   uint8_t send_data[10] = {0};
   uint16_t length = 3;
   send_data[0] = HEADER[0];
@@ -236,7 +246,12 @@ void Dynamixel::Reboot(uint8_t servo_id) {
 
 }
 
-void Dynamixel::FactoryReset(uint8_t servo_id, FactoryResetLevel level) {
+/** @fn
+ * @brief 指定したDynamixelをファクトリーリセットする
+ * @param uint8_t servo_id 対象のID
+ * @param FactoryResetLevel level リセットレベル
+ */
+void DynamixelComunicator::FactoryReset(uint8_t servo_id, FactoryResetLevel level) {
   uint8_t send_data[11] = {0};
   uint16_t length = 4;
   send_data[0] = HEADER[0];
@@ -259,7 +274,13 @@ void Dynamixel::FactoryReset(uint8_t servo_id, FactoryResetLevel level) {
   }
 }
 
-bool Dynamixel::Ping(uint8_t servo_id) {
+
+/** @fn
+ * @brief 指定したDynamixelにpingを送り，応答があるかをboolで返す
+ * @param uint8_t servo_id 対象のID
+ * @return bool 応答があったかどうか
+ */
+bool DynamixelComunicator::Ping(uint8_t servo_id) {
   uint8_t send_data[10] = {0};
   uint16_t length = 3;
   send_data[0] = HEADER[0];
@@ -290,7 +311,7 @@ bool Dynamixel::Ping(uint8_t servo_id) {
  * @param int64_t data_int 書き込むデータ．intに変換済みのもの．どの型にも対応できるようにint64_t
  * @return void
  */
-void Dynamixel::Write(uint8_t servo_id, DynamixelParameter dp, int64_t data_int) {
+void DynamixelComunicator::Write(uint8_t servo_id, DynamixelParameter dp, int64_t data_int) {
   uint8_t send_data[20] = {0};
   uint16_t length = dp.size()+5;
   send_data[0] = HEADER[0];
@@ -328,87 +349,6 @@ void Dynamixel::Write(uint8_t servo_id, DynamixelParameter dp, int64_t data_int)
   }
 }
 
-
-// /** @fn
-//  * 
-//  * あとで
-//  */
-// void Dynamixel::clearMultiTurn(uint8_t servo_id) {
-//   uint8_t send_data[15] = {0};
-//   // make packet header
-//   send_data[0]   = 0xFF;
-//   send_data[1]   = 0xFF;
-//   send_data[2]   = 0xFD;
-//   send_data[3]  = 0x00;
-//   send_data[4]            = servo_id;
-//   send_data[5]      = 8;
-//   send_data[6]      = 0;
-//   send_data[7]     = 16;
-//   send_data[8]    = 0x01;
-//   send_data[8+1]  = 0x44;
-//   send_data[8+2]  = 0x58;
-//   send_data[8+3]  = 0x4C;
-//   send_data[8+4]  = 0x22;
-//   uint16_t crc = updateCRC(0, send_data, 15 - 2);    // 2: CRC16
-//   send_data[13] = DXL_LOBYTE(crc);
-//   send_data[14] = DXL_HIBYTE(crc);
-  
-//   port_handler_->clearPort();
-//   port_handler_->writePort(send_data, 15);
-
-// }
-
-// unsigned short Dynamixel::updateCRC(uint16_t crc_accum, uint8_t *data_blk_ptr, uint16_t data_blk_size)
-// {
-//   uint16_t i;
-//   static const uint16_t crc_table[256] = {0x0000,
-//   0x8005, 0x800F, 0x000A, 0x801B, 0x001E, 0x0014, 0x8011,
-//   0x8033, 0x0036, 0x003C, 0x8039, 0x0028, 0x802D, 0x8027,
-//   0x0022, 0x8063, 0x0066, 0x006C, 0x8069, 0x0078, 0x807D,
-//   0x8077, 0x0072, 0x0050, 0x8055, 0x805F, 0x005A, 0x804B,
-//   0x004E, 0x0044, 0x8041, 0x80C3, 0x00C6, 0x00CC, 0x80C9,
-//   0x00D8, 0x80DD, 0x80D7, 0x00D2, 0x00F0, 0x80F5, 0x80FF,
-//   0x00FA, 0x80EB, 0x00EE, 0x00E4, 0x80E1, 0x00A0, 0x80A5,
-//   0x80AF, 0x00AA, 0x80BB, 0x00BE, 0x00B4, 0x80B1, 0x8093,
-//   0x0096, 0x009C, 0x8099, 0x0088, 0x808D, 0x8087, 0x0082,
-//   0x8183, 0x0186, 0x018C, 0x8189, 0x0198, 0x819D, 0x8197,
-//   0x0192, 0x01B0, 0x81B5, 0x81BF, 0x01BA, 0x81AB, 0x01AE,
-//   0x01A4, 0x81A1, 0x01E0, 0x81E5, 0x81EF, 0x01EA, 0x81FB,
-//   0x01FE, 0x01F4, 0x81F1, 0x81D3, 0x01D6, 0x01DC, 0x81D9,
-//   0x01C8, 0x81CD, 0x81C7, 0x01C2, 0x0140, 0x8145, 0x814F,
-//   0x014A, 0x815B, 0x015E, 0x0154, 0x8151, 0x8173, 0x0176,
-//   0x017C, 0x8179, 0x0168, 0x816D, 0x8167, 0x0162, 0x8123,
-//   0x0126, 0x012C, 0x8129, 0x0138, 0x813D, 0x8137, 0x0132,
-//   0x0110, 0x8115, 0x811F, 0x011A, 0x810B, 0x010E, 0x0104,
-//   0x8101, 0x8303, 0x0306, 0x030C, 0x8309, 0x0318, 0x831D,
-//   0x8317, 0x0312, 0x0330, 0x8335, 0x833F, 0x033A, 0x832B,
-//   0x032E, 0x0324, 0x8321, 0x0360, 0x8365, 0x836F, 0x036A,
-//   0x837B, 0x037E, 0x0374, 0x8371, 0x8353, 0x0356, 0x035C,
-//   0x8359, 0x0348, 0x834D, 0x8347, 0x0342, 0x03C0, 0x83C5,
-//   0x83CF, 0x03CA, 0x83DB, 0x03DE, 0x03D4, 0x83D1, 0x83F3,
-//   0x03F6, 0x03FC, 0x83F9, 0x03E8, 0x83ED, 0x83E7, 0x03E2,
-//   0x83A3, 0x03A6, 0x03AC, 0x83A9, 0x03B8, 0x83BD, 0x83B7,
-//   0x03B2, 0x0390, 0x8395, 0x839F, 0x039A, 0x838B, 0x038E,
-//   0x0384, 0x8381, 0x0280, 0x8285, 0x828F, 0x028A, 0x829B,
-//   0x029E, 0x0294, 0x8291, 0x82B3, 0x02B6, 0x02BC, 0x82B9,
-//   0x02A8, 0x82AD, 0x82A7, 0x02A2, 0x82E3, 0x02E6, 0x02EC,
-//   0x82E9, 0x02F8, 0x82FD, 0x82F7, 0x02F2, 0x02D0, 0x82D5,
-//   0x82DF, 0x02DA, 0x82CB, 0x02CE, 0x02C4, 0x82C1, 0x8243,
-//   0x0246, 0x024C, 0x8249, 0x0258, 0x825D, 0x8257, 0x0252,
-//   0x0270, 0x8275, 0x827F, 0x027A, 0x826B, 0x026E, 0x0264,
-//   0x8261, 0x0220, 0x8225, 0x822F, 0x022A, 0x823B, 0x023E,
-//   0x0234, 0x8231, 0x8213, 0x0216, 0x021C, 0x8219, 0x0208,
-//   0x820D, 0x8207, 0x0202 };
-
-//   for (uint16_t j = 0; j < data_blk_size; j++)
-//   {
-//     i = ((uint16_t)(crc_accum >> 8) ^ *data_blk_ptr++) & 0xFF;
-//     crc_accum = (crc_accum << 8) ^ crc_table[i];
-//   }
-
-//   return crc_accum;
-// }
-
 /** @fn
  * @brief Dynamixelから情報を読み込む
  * @param uint8_t servo_id 対象のID
@@ -416,7 +356,7 @@ void Dynamixel::Write(uint8_t servo_id, DynamixelParameter dp, int64_t data_int)
  * @param int64_t data_int 書き込むデータ．intに変換済みのもの．どの型にも対応できるようにint64_t
  * @return (int64_t) 読み込んだデータ．intのまま
  */
-int64_t Dynamixel::Read(uint8_t servo_id, DynamixelParameter dp) {
+int64_t DynamixelComunicator::Read(uint8_t servo_id, DynamixelParameter dp) {
   uint8_t send_data[14] = {0};
   uint16_t length = 7;
   send_data[0] = HEADER[0];
@@ -482,8 +422,17 @@ int64_t Dynamixel::Read(uint8_t servo_id, DynamixelParameter dp) {
   return 0;
 }
 
-void Dynamixel::SyncWrite(uint8_t num_servo, uint8_t servo_id_list[], DynamixelParameter dp, int64_t data_int_list[]) {
+
+/** @fn
+ * @brief 複数のDynamixelの同一のアドレスに情報を書き込む
+ * @param vector<uint8_t> servo_id_list servo_id_list 書き込むサーボのIDのベクトル
+ * @param DynamixelParameter dp 対象のパラメータのインスタンス
+ * @param int64_t data_int_list[] 書き込むデータのリスト．intに変換済みのもの．どの型にも対応できるようにint64_t
+ * @return void
+ */
+void DynamixelComunicator::SyncWrite( const vector<uint8_t>& servo_id_list, DynamixelParameter dp, const vector<int64_t>& data_int_list) {
   uint8_t send_data[512] = {0};
+  int8_t num_servo = servo_id_list.size();
   uint16_t length = (1+dp.size())*num_servo+7;
   send_data[0] = HEADER[0];
   send_data[1] = HEADER[1];
@@ -512,8 +461,17 @@ void Dynamixel::SyncWrite(uint8_t num_servo, uint8_t servo_id_list[], DynamixelP
   port_handler_->writePort(send_data, 14+num_servo*(dp.size()+1));
 }
 
-uint8_t Dynamixel::SyncRead(uint8_t num_servo, uint8_t servo_id_list[], DynamixelParameter dp,
-                            int64_t data_int_list[], uint8_t read_id_list[]) {
+/** @fn
+ * @brief 複数のDynamixelの同一のアドレスから情報を読み込む
+ * @param vector<uint8_t> servo_id_list 読み込むサーボのIDのリスト
+ * @param DynamixelParameter dp 対象のパラメータのインスタンス
+ * @param vector<int64_t> data_int_list 読み込んだデータのリスト．intのまま
+ * @param vector<uint8_t> read_id_list 読み込めたサーボのIDのリスト
+ * @return uint8_t 読み込めたサーボの数
+ */
+uint8_t DynamixelComunicator::SyncRead( const vector<uint8_t>& servo_id_list, DynamixelParameter dp,
+                            vector<int64_t>& data_int_list, vector<uint8_t>& read_id_list) {
+  uint8_t num_servo = servo_id_list.size();
   uint8_t send_data[128] = {0};
   uint16_t length = num_servo+7;
   send_data[0] = HEADER[0];
@@ -544,21 +502,21 @@ uint8_t Dynamixel::SyncRead(uint8_t num_servo, uint8_t servo_id_list[], Dynamixe
     port_handler_->setPacketTimeout( uint16_t(11+dp.size()) );
     while(port_handler_->getBytesAvailable() < 11+dp.size()) {
       if (port_handler_->isPacketTimeout()) {
-        printf("Read Error(time out): ID %d, available bytes %d\n", servo_id_list[i_servo], port_handler_->getBytesAvailable());
+        printf("Sync Read Error(time out): ID %d, available bytes %d / %d\n", servo_id_list[i_servo], port_handler_->getBytesAvailable(), 11+dp.size());
         error_last_read_ = true;
         return 0;
       }
     }
 
     if (port_handler_->readPort(read_data, 11+dp.size()) == -1) {
-      printf("Read Error : ID %d\n", servo_id_list[i_servo]);
+      printf("Sync Read Error(read port) : ID %d\n", servo_id_list[i_servo]);
       continue;
     }
     if (read_data[0] != HEADER[0] or
         read_data[1] != HEADER[1] or
         read_data[2] != HEADER[2] or
         read_data[3] != HEADER[3]) {
-      printf("Read Error(header): ID %d\n", servo_id_list[i_servo]);
+      printf("Sync Read Error(header): ID %d\n", servo_id_list[i_servo]);
       continue;
     }
     uint16_t sum_read = CalcChecksum(read_data, 9+dp.size());
@@ -566,7 +524,7 @@ uint8_t Dynamixel::SyncRead(uint8_t num_servo, uint8_t servo_id_list[], Dynamixe
     uint8_t sum_h  = (sum_read>>8) & 0xFF;
     if (read_data[9+dp.size()] != sum_l or
         read_data[10+dp.size()] != sum_h) {
-      printf("Read Error(crc): ID %d\n", servo_id_list[i_servo]);
+      printf("Sync Read Error(crc): ID %d\n", servo_id_list[i_servo]);
       error_last_read_ = true;
       continue;
     }

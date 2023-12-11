@@ -3,6 +3,11 @@
 
 #include <stdint.h>
 
+enum FactoryResetLevel {
+  FACTORY_RESET_EXCLUDE_ID          = 0x01,
+  FACTORY_RESET_EXCLUDE_ID_BAUDRATE = 0x02,
+  FACTORY_RESET_ALL                 = 0xFF,
+};
 enum DynamixelBaudrateIndex {
   BAUDRATE_INDEX_9600 = 0,
   BAUDRATE_INDEX_57600 = 1,

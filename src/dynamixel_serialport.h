@@ -2,24 +2,21 @@
 #define DYNAMIXEL_COMMUNICATOR_H_
 
 #include <vector>
-#include <cmath>
+using std::vector;
 #include <string>
+using std::string;
+#include <cmath>
 
 #include "download/port_handler.h"
 #include "dynamixel_parameters.h"
 
-class Dynamixel {
- public:
-  enum FactoryResetLevel {
-    FACTORY_RESET_EXCLUDE_ID = 0x01,
-    FACTORY_RESET_EXCLUDE_ID_BAUDRATE = 0x02,
-    FACTORY_RESET_ALL = 0xFF,
-  };
 
-  Dynamixel() {
+class DynamixelComunicator {
+ public:
+  DynamixelComunicator() {
     status_return_level_ = 2;
   }
-  Dynamixel(const char *port_name, int baudrate) {
+  DynamixelComunicator(const char *port_name, int baudrate) {
     GetPortHandler(port_name);
     set_baudrate(baudrate);
     status_return_level_ = 2;
@@ -30,20 +27,13 @@ class Dynamixel {
     port_handler_ = PortHandler::getPortHandler(port_name);
   }
 
-  void set_baudrate(int baudrate) {
-    baudrate_ = baudrate;
-  }
+  void set_baudrate(int baudrate) { baudrate_ = baudrate; }
 
-  void set_status_return_level(int level) {
-    status_return_level_ = level;
-  }
+  void set_status_return_level(int level) { status_return_level_ = level; }
 
   bool error_last_read(){ return error_last_read_; }
 
-  std::string get_port_name(){
-    return std::string(port_name_);
-  }
-
+  string port_name(){ return string(port_name_); }
   template <typename T>
   T ValueToIntData(double value, DynamixelParameter dp, T type) {
     return value/dp.value_per_bit();
@@ -56,11 +46,18 @@ class Dynamixel {
   bool Ping(uint8_t servo_id);
 
   void Write(uint8_t servo_id, DynamixelParameter dp, int64_t data_int);
-  // void clearMultiTurn(uint8_t servo_id);
-  // unsigned short updateCRC(uint16_t crc_accum, uint8_t *data_blk_ptr, uint16_t data_blk_size);
   int64_t Read(uint8_t servo_id, DynamixelParameter dp);
-  void SyncWrite(uint8_t num_servo, uint8_t servo_id_list[], DynamixelParameter dp, int64_t data_int_list[]);
-  uint8_t SyncRead(uint8_t num_servo, uint8_t servo_id_list[], DynamixelParameter dp, int64_t data_int_list[], uint8_t read_id_list[]);
+  void SyncWrite(const vector<uint8_t>& servo_id_list, DynamixelParameter dp, const vector<int64_t>& data_int_list);
+  uint8_t SyncRead(const vector<uint8_t>& servo_id_list, DynamixelParameter dp, vector<int64_t>& data_int_list, vector<uint8_t>& read_id_list);
+// void BulkWrite(const vector<uint8_t>& servo_id_list, const vector<DynamixelParameter>& dp_list, const vector<int64_t>& data_int_list);
+// uint8_t BulkRead(const vector<uint8_t>& servo_id_list, const vector<DynamixelParameter>& dp_list, vector<int64_t>& data_int_list, vector<uint8_t>& read_id_list);
+	// ここまではDynamixelSDKと同じ関数の独自実装，これ以降は独自関数
+// void RangeWrite(uint8_t servo_id, const vector<DynamixelParameter>& dp_list, const vector<int64_t>& data_int_list);
+// void RangeRead(uint8_t servo_id, const vector<DynamixelParameter>& dp_list, vector<int64_t>& data_int_list);
+// void SyncRangeWrite(const vector<uint8_t>& servo_id_list, const vector<DynamixelParameter>& dp_list, const vector<vector<int64_t>>& data_int_list);
+// uint8_t SyncRangeRead(const vector<uint8_t>& servo_id_list, const vector<DynamixelParameter>& dp_list, vector<vector<int64_t>>& data_int_list, vector<uint8_t>& read_id_list);
+// void BulkRangeWrite(const vector<uint8_t>& servo_id_list, const vector<DynamixelParameter>& dp_list, const vector<vector<int64_t>>& data_int_list);
+// uint8_t BulkRangeRead(const vector<uint8_t>& servo_id_list, const vector<DynamixelParameter>& dp_list, vector<vector<int64_t>>& data_int_list, vector<uint8_t>& read_id_list);
 
  private:
   uint16_t CalcChecksum(uint8_t data[], uint8_t length);
