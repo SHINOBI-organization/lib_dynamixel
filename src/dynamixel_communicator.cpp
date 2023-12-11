@@ -643,16 +643,14 @@ uint8_t DynamixelComunicator::SyncRead_fast(const vector<uint8_t>& servo_id_list
  * @brief Dynamixelから複数の情報を同時に読み込む
  * @param uint8_t servo_id 対象のID
  * @param vector<DynamixelParameter> dp_list 対象のパラメータのインスタンスの配列
- * @param int64_t[] data_int_list 読み込んだデータを格納する配列．intに変換済みのもの．
+ * @param vector<int64_t>& data_int_list 読み込んだデータを格納する配列．intに変換済みのもの．
  * @return (void) 
  */
 void DynamixelComunicator::RangeRead(uint8_t servo_id, const vector<DynamixelParameter>& dp_list, vector<int64_t>& data_int_list) {
-	// 引数チェック， dp_listとdata_int_listのサイズが一致しているか
-	if (dp_list.size() != data_int_list.size()) {
-		printf("Range Read Error : dp_list.size() != data_int_list.size()\n");
-		return;
-	}
-  // instruction packetを作成
+  // 引数の確認と初期化
+  if (dp_list.size() != data_int_list.size()) data_int_list.resize(dp_list.size(), 0);
+
+  // 読み込むデータの範囲を決定
   DynamixelParameter dp_min = dp_list[0];
   DynamixelParameter dp_max = dp_list[0];
   for ( auto dp : dp_list ) {
@@ -660,6 +658,8 @@ void DynamixelComunicator::RangeRead(uint8_t servo_id, const vector<DynamixelPar
 	 dp_max = dp_max.address() > dp.address() ? dp_max : dp;
   }
   auto size_total_dp = dp_max.address() + dp_max.size() - dp_min.address();
+
+  // instruction packetを作成
   uint8_t send_data[14] = {0};
   uint16_t length = 7;
   send_data[0] = HEADER[0];
