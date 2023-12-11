@@ -13,8 +13,10 @@ static const uint8_t INSTRUCTION_FACTORY_RESET = 0x06;
 static const uint8_t INSTRUCTION_REBOOT        = 0x08;
 static const uint8_t INSTRUCTION_SYNC_READ     = 0x82;
 static const uint8_t INSTRUCTION_SYNC_WRITE    = 0x83;
+static const uint8_t INSTRUCTION_FAST_SYNC_READ= 0x8A;
 static const uint8_t INSTRUCTION_BULK_READ     = 0x92;
 static const uint8_t INSTRUCTION_BULK_WRITE    = 0x93;
+static const uint8_t INSTRUCTION_FAST_BULK_READ= 0x9A;
 
 static const uint8_t HEADER[4] = {0xFF, 0xFF, 0xFD, 0x00};
 
@@ -504,7 +506,7 @@ uint8_t DynamixelComunicator::SyncRead( const vector<uint8_t>& servo_id_list, Dy
       if (port_handler_->isPacketTimeout()) {
         printf("Sync Read Error(time out): ID %d, available bytes %d / %d\n", servo_id_list[i_servo], port_handler_->getBytesAvailable(), 11+dp.size());
         error_last_read_ = true;
-        return 0;
+        return num_read;
       }
     }
 
@@ -538,3 +540,101 @@ uint8_t DynamixelComunicator::SyncRead( const vector<uint8_t>& servo_id_list, Dy
   }
   return num_read;
 }
+
+
+/** @fn
+ * @brief 複数のDynamixelの同一のアドレスから情報を読み込む,パケットを最小限にすることで高速化したもの．サーボ1つでも失敗するとすべて読み込めない
+ * @param vector<uint8_t> servo_id_list 読み込むサーボのIDのリスト
+ * @param DynamixelParameter dp 対象のパラメータのインスタンス
+ * @param vector<int64_t> data_int_list 読み込んだデータのリスト．intのまま
+ * @param vector<uint8_t> read_id_list 読み込めたサーボのIDのリスト
+ * @return uint8_t 読み込めたか個数
+ */
+uint8_t DynamixelComunicator::SyncRead_fast(const vector<uint8_t>& servo_id_list, DynamixelParameter dp,
+                            vector<int64_t>& data_int_list, vector<uint8_t>& read_id_list) {
+
+	uint8_t num_servo = servo_id_list.size();
+	uint8_t send_data[128] = {0};
+	uint16_t length = num_servo+7;
+	send_data[0] = HEADER[0];
+	send_data[1] = HEADER[1];
+	send_data[2] = HEADER[2];
+	send_data[3] = HEADER[3];
+	send_data[4] = 0xFE;  // id
+	send_data[5] = length & 0xFF;
+	send_data[6] = (length>>8) & 0xFF;
+	send_data[7] = INSTRUCTION_FAST_SYNC_READ;  // instruction
+	send_data[8] = dp.address() & 0xFF;
+	send_data[9] = (dp.address()>>8) & 0xFF;
+	send_data[10] = dp.size() & 0xFF;
+	send_data[11] = (dp.size()>>8) & 0xFF;
+	for(int i_servo=0; i_servo<num_servo; i_servo++) {
+		send_data[12+i_servo] = servo_id_list[i_servo];
+	}
+	uint16_t sum = CalcChecksum(send_data, 12+num_servo);
+	send_data[12+num_servo] = sum & 0xFF;
+	send_data[13+num_servo] = (sum>>8) & 0xFF;
+
+	port_handler_->clearPort();
+	port_handler_->writePort(send_data, 14+num_servo);
+
+	// シリアルの読み込み処理，パケットの読み込みはここの一回だけ
+	uint8_t length_a_servo = 4+dp.size();
+	uint8_t read_data[1023];
+	uint16_t length_read_data = 8+length_a_servo*num_servo;
+	port_handler_->setPacketTimeout( uint16_t(length_read_data) );
+	while(port_handler_->getBytesAvailable() < length_read_data) {
+		if (port_handler_->isPacketTimeout()) {
+		printf("Fast Sync Read Error(time out) : available bytes %d / %d\n", port_handler_->getBytesAvailable(), length_read_data);
+		error_last_read_ = true;
+		return 0; //個
+		}
+	}
+
+	// パケットの読み込み
+	if (port_handler_->readPort(read_data, length_read_data) == -1) {
+		printf("Fast Sync Read Error(read port)\n");
+		error_last_read_ = true;
+		return 0; //個
+	}
+	// 読み込めたパケットのヘッダーの確認
+	if (read_data[0] != HEADER[0] ||
+		 read_data[1] != HEADER[1] ||
+		 read_data[2] != HEADER[2] ||
+		 read_data[3] != HEADER[3]) {
+		printf("Fast Sync Read Error(header)\n");
+		error_last_read_ = true;
+		return 0; //個
+	}
+	// 読み込めたパケットのIDがブロードキャスト用のものか確認
+	if ( read_data[4] != 0xFE ) {
+		printf("Fast Sync Read Error(broad cast id)\n");
+		error_last_read_ = true;
+		return 0; //個
+	}
+
+	// 読み込めたパケットを個々のサーボのパケットに分割して処理,チェックサムの処理は行わない
+	for(int i_servo=0; i_servo<num_servo; i_servo++) {
+		uint8_t id = (uint8_t)read_data[9 + i_servo*length_a_servo]; // servo id
+			if ( id != servo_id_list[i_servo] ) {
+				printf("Fast Sync Read Error(packet id) : id [%d]\n", servo_id_list[i_servo]);
+				error_last_read_ = true;
+				return 0; //個
+			}
+		uint8_t error = (uint8_t)read_data[8 + i_servo*length_a_servo]; // error
+			if ( error != 0) {
+				printf("Fast Sync Read Error(packet error) : id [%d]\n", id);
+				error_last_read_ = true;
+				return 0; //個
+			}
+		// 読み込めたパケットを意味あるデータに変換
+		for(int i_data=0; i_data<dp.size(); i_data++) {
+			data_read_[i_data] = read_data[10 + i_servo*length_a_servo + i_data];
+		}
+		read_id_list[i_servo]  = id;
+		data_int_list[i_servo] = DecodeDataRead(dp.data_type());
+	}
+
+	return num_servo;
+}
+
