@@ -72,5 +72,32 @@ class DynamixelComunicator {
   bool error_last_read_;
 };
 
+// 以下のようにして，良い感じに関数を作る
+// namespace dyn_x {
+//   void SetTorqueEnable(const vector<uint8_t>& servo_id_list, bool enable);
+//   void SetTorqueEnable(uint8_t servo_id, bool enable);
+//   void SetLed(const vector<uint8_t>& servo_id_list, bool enable);
+//   void SetLed(uint8_t servo_id, bool enable);
+//   void SetGoalPosition(const vector<uint8_t>& servo_id_list, const vector<int64_t>& data_int_list);
+//   void SetGoalPosition(uint8_t servo_id, int64_t data_int);
+//   void SetGoalVelocity(const vector<uint8_t>& servo_id_list, const vector<int64_t>& data_int_list);
+//   void SetGoalVelocity(uint8_t servo_id, int64_t data_int);
+//   void SetGoalCurrent(const vector<uint8_t>& servo_id_list, const vector<int64_t>& data_int_list);
+//   void SetGoalCurrent(uint8_t servo_id, int64_t data_int);
+//   void SetProfileAcceleration(const vector<uint8_t>& servo_id_list, const vector<int64_t>& data_int_list);
+//   void SetProfileAcceleration(uint8_t servo_id, int64_t data_int);
+//   void SetProfileVelocity(const vector<uint8_t>& servo_id_list, const vector<int64_t>& data_int_list);
+//   void SetProfileVelocity(uint8_t servo_id, int64_t data_int);
+//   void SetPositionPgain(const vector<uint8_t>& servo_id_list, const vector<int64_t>& data_int_list);
+//   void SetPositionPgain(uint8_t servo_id, int64_t data_int);
+//   void SetPositionIgain(const vector<uint8_t>& servo_id_list, const vector<int64_t>& data_int_list);
+//   void SetPositionIgain(uint8_t servo_id, int64_t data_int);
+//   void SetPositionDgain(const vector<uint8_t>& servo_id_list, const vector<int64_t>& data_int_list);
+//   void SetPositionDgain(uint8_t servo_id, int64_t data_int);
+//   void SetVelocityPgain(const vector<uint8_t>& servo_id_list, const vector<int64_t>& data_int_list);
+//   void SetVelocityPgain(uint8_t servo_id, int64_t data_int);
+//   void SetVelocityIgain(const vector<uint8_t
+// }
+
 
 #endif /* DYNAMIXEL_COMMUNICATOR_H_ */
