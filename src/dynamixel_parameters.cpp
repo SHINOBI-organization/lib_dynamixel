@@ -7,11 +7,18 @@
 
 // dynamixel X series   
 namespace dyn_x {
+    DynamixelParameter model_number          (  0, TYPE_UINT16);
     DynamixelParameter id                    (  7, TYPE_UINT8 );
     DynamixelParameter baudrate              (  8, TYPE_UINT8 );
     DynamixelParameter return_deray_time     (  9, TYPE_UINT8 );
+    DynamixelParameter drive_mode            ( 10, TYPE_UINT8 );
     DynamixelParameter operating_mode        ( 11, TYPE_UINT8 );
+    DynamixelParameter shadow_id             ( 12, TYPE_UINT8 );
     DynamixelParameter homing_offset         ( 20, TYPE_INT32 ); // M_PI/2048.0);
+    DynamixelParameter homing_threshold      ( 24, TYPE_UINT32); 
+    DynamixelParameter temperature_limit     ( 31, TYPE_UINT8 ); // 1~100
+    DynamixelParameter max_voltage_limit     ( 32, TYPE_UINT16); // 1~100
+    DynamixelParameter min_voltage_limit     ( 34, TYPE_UINT16); // 1~100
     DynamixelParameter pwm_limit             ( 36, TYPE_UINT16); //, 100.0/885 /*%*/);
     DynamixelParameter current_limit         ( 38, TYPE_UINT16); //, def: 2.69/*mA*/, xh430v: 1.34/*mA*/ x_330_: 1.00/*mA*/
     DynamixelParameter acceleration_limit    ( 40, TYPE_UINT32); //, 214.577*2.0*M_PI/3600.0);
@@ -25,26 +32,38 @@ namespace dyn_x {
     DynamixelParameter torque_enable         ( 64, TYPE_UINT8 );
     DynamixelParameter led                   ( 65, TYPE_UINT8 );
     DynamixelParameter status_return_level   ( 68, TYPE_UINT8 );
+    DynamixelParameter registered_instruction( 69, TYPE_UINT8 );
     DynamixelParameter hardware_error_status ( 70, TYPE_UINT8 );
     DynamixelParameter velocity_i_gain       ( 76, TYPE_UINT16); // 型番によってデフォルト値が異なる
     DynamixelParameter velocity_p_gain       ( 78, TYPE_UINT16); // 型番によってデフォルト値が異なる
     DynamixelParameter position_d_gain       ( 80, TYPE_UINT16); // 型番によってデフォルト値が異なる
     DynamixelParameter position_i_gain       ( 82, TYPE_UINT16); // 型番によってデフォルト値が異なる
     DynamixelParameter position_p_gain       ( 84, TYPE_UINT16); // 型番によってデフォルト値が異なる
+    DynamixelParameter feedforward_acc_gain  ( 88, TYPE_UINT16);
+    DynamixelParameter feedforward_vel_gain  ( 90, TYPE_UINT16);
+    DynamixelParameter bus_watchbdog         ( 98, TYPE_INT8  );
+    DynamixelParameter goal_pwm              (100, TYPE_INT16 ); 
     DynamixelParameter goal_current          (102, TYPE_INT16 ); //, def: 2.69/*mA*/, xh430v: 1.34/*mA*/ x_330_: 1.00/*mA*/
     DynamixelParameter goal_velocity         (104, TYPE_INT32 ); //, 0.229*2.0*M_PI/60.0);
     DynamixelParameter profile_acceleration  (108, TYPE_INT32 ); //, 214.577*2.0*M_PI/3600.0); // unit 214.577 [rpm^2]
     DynamixelParameter profile_velocity      (112, TYPE_INT32 ); //, 0.229*2.0*M_PI/60.0 );    // unit 0.229  [rpm]
     DynamixelParameter goal_position         (116, TYPE_INT32 ); //, M_PI/2048.0);
+    DynamixelParameter realtime_tick         (120, TYPE_UINT16);
+    DynamixelParameter moving                (122, TYPE_UINT8 );
+    DynamixelParameter moving_status         (123, TYPE_UINT8 );
+    DynamixelParameter present_pwm           (124, TYPE_INT16 );
     DynamixelParameter present_current       (126, TYPE_INT16 ); //, def: 2.69/*mA*/, xh430v: 1.34/*mA*/ x_330_: 1.00/*mA*/
     DynamixelParameter present_velocity      (128, TYPE_INT32 ); //, M_PI/180.0*0.229);
     DynamixelParameter present_position      (132, TYPE_INT32 ); //, M_PI/2048.0);
+    DynamixelParameter velocity_trajectory   (136, TYPE_INT32 );
+    DynamixelParameter position_trajectory   (140, TYPE_INT32 );
     DynamixelParameter present_input_voltage (144, TYPE_UINT16); //, 0.1);
     DynamixelParameter present_temperture    (146, TYPE_UINT8 );
     DynamixelParameter external_port_data_1  (152, TYPE_UINT16);
     DynamixelParameter external_port_data_2  (154, TYPE_UINT16);
     DynamixelParameter external_port_data_3  (156, TYPE_UINT16);
 }
+// 以後Indirect Address, うまく実装して取り込みたい．
 
 // dynamixel P series (old: pro plus)
 namespace dyn_p {
