@@ -614,28 +614,33 @@ uint8_t DynamixelComunicator::SyncRead_fast(const vector<uint8_t>& servo_id_list
 	}
 
 	// 読み込めたパケットを個々のサーボのパケットに分割して処理,チェックサムの処理は行わない
+    uint8_t num_read = 0;
 	for(int i_servo=0; i_servo<num_servo; i_servo++) {
 		uint8_t id = (uint8_t)read_data[9 + i_servo*length_a_servo]; // servo id
 			if ( id != servo_id_list[i_servo] ) {
 				printf("Fast Sync Read Error(packet id) : id [%d]\n", servo_id_list[i_servo]);
 				error_last_read_ = true;
-				return 0; //個
+				return num_read; //個
 			}
 		uint8_t error = (uint8_t)read_data[8 + i_servo*length_a_servo]; // error
-			if ( error != 0) {
+            if ( error & 0x80 ) { // error の最上位ビットが1のとき，ハードウェアエラーが発生している
+				// printf("Fast Sync Read Warn(detected hardware error) : id [%d]\n", id); // うるさいので消す．
+            }
+            if ( error & 0x7F ) { // error の最上位ビット以外が1のとき，通信状態の異常がある
 				printf("Fast Sync Read Error(packet error) : id [%d]\n", id);
 				error_last_read_ = true;
-				return 0; //個
+                return num_read; //個
 			}
 		// 読み込めたパケットを意味あるデータに変換
 		for(int i_data=0; i_data<dp.size(); i_data++) {
 			data_read_[i_data] = read_data[10 + i_servo*length_a_servo + i_data];
 		}
+        num_read++;
 		read_id_list[i_servo]  = id;
 		data_int_list[i_servo] = DecodeDataRead(dp.data_type());
 	}
 
-	return num_servo;
+	return num_read;
 }
 
 
