@@ -57,6 +57,11 @@ class DynamixelComunicator {
 //   void BulkRangeWrite(const vector<uint8_t>& servo_id_list, const vector<DynamixelParameter>& dp_list, const vector<vector<int64_t>>& data_int_list);
 //   uint8_t BulkRangeRead(const vector<uint8_t>& servo_id_list, const vector<DynamixelParameter>& dp_list, vector<vector<int64_t>>& data_int_list, vector<uint8_t>& read_id_list);
 
+  vector<uint8_t> Scan(uint8_t id_max);
+  bool ClearError(uint8_t servo_id, DynamixelTorquePermission after_state=TORQUE_ENABLE);
+  bool TorqueEnable(uint8_t servo_id);
+  bool TorqueDisable(uint8_t servo_id);
+
  private:
   uint16_t CalcChecksum(uint8_t data[], uint8_t length);
   void EncodeDataWrite(DynamixelDataType type, int64_t data_int);
