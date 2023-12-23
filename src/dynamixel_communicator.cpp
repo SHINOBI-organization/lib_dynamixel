@@ -309,11 +309,11 @@ bool DynamixelComunicator::Ping(uint8_t servo_id) {
 /** @fn
  * @brief Dynamixelに情報を書き込む
  * @param uint8_t servo_id 対象のID
- * @param DynamixelParameter dp 対象のパラメータのインスタンス
+ * @param DynamixelAddress dp 対象のパラメータのインスタンス
  * @param int64_t data_int 書き込むデータ．intに変換済みのもの．どの型にも対応できるようにint64_t
  * @return void
  */
-void DynamixelComunicator::Write(uint8_t servo_id, DynamixelParameter dp, int64_t data_int) {
+void DynamixelComunicator::Write(uint8_t servo_id, DynamixelAddress dp, int64_t data_int) {
   uint8_t send_data[20] = {0};
   uint16_t length = dp.size()+5;
   send_data[0] = HEADER[0];
@@ -354,11 +354,11 @@ void DynamixelComunicator::Write(uint8_t servo_id, DynamixelParameter dp, int64_
 /** @fn
  * @brief Dynamixelから情報を読み込む
  * @param uint8_t servo_id 対象のID
- * @param DynamixelParameter dp 対象のパラメータのインスタンス
+ * @param DynamixelAddress dp 対象のパラメータのインスタンス
  * @param int64_t data_int 書き込むデータ．intに変換済みのもの．どの型にも対応できるようにint64_t
  * @return (int64_t) 読み込んだデータ．intのまま
  */
-int64_t DynamixelComunicator::Read(uint8_t servo_id, DynamixelParameter dp) {
+int64_t DynamixelComunicator::Read(uint8_t servo_id, DynamixelAddress dp) {
   uint8_t send_data[14] = {0};
   uint16_t length = 7;
   send_data[0] = HEADER[0];
@@ -428,11 +428,11 @@ int64_t DynamixelComunicator::Read(uint8_t servo_id, DynamixelParameter dp) {
 /** @fn
  * @brief 複数のDynamixelの同一のアドレスに情報を書き込む
  * @param vector<uint8_t> servo_id_list servo_id_list 書き込むサーボのIDのベクトル
- * @param DynamixelParameter dp 対象のパラメータのインスタンス
+ * @param DynamixelAddress dp 対象のパラメータのインスタンス
  * @param int64_t data_int_list[] 書き込むデータのリスト．intに変換済みのもの．どの型にも対応できるようにint64_t
  * @return void
  */
-void DynamixelComunicator::SyncWrite( const vector<uint8_t>& servo_id_list, DynamixelParameter dp, const vector<int64_t>& data_int_list) {
+void DynamixelComunicator::SyncWrite( const vector<uint8_t>& servo_id_list, DynamixelAddress dp, const vector<int64_t>& data_int_list) {
   uint8_t send_data[512] = {0};
   int8_t num_servo = servo_id_list.size();
   uint16_t length = (1+dp.size())*num_servo+7;
@@ -466,12 +466,12 @@ void DynamixelComunicator::SyncWrite( const vector<uint8_t>& servo_id_list, Dyna
 /** @fn
  * @brief 複数のDynamixelの同一のアドレスから情報を読み込む
  * @param vector<uint8_t> servo_id_list 読み込むサーボのIDのリスト
- * @param DynamixelParameter dp 対象のパラメータのインスタンス
+ * @param DynamixelAddress dp 対象のパラメータのインスタンス
  * @param vector<int64_t> data_int_list 読み込んだデータのリスト．intのまま
  * @param vector<uint8_t> read_id_list 読み込めたサーボのIDのリスト
  * @return uint8_t 読み込めたサーボの数
  */
-uint8_t DynamixelComunicator::SyncRead( const vector<uint8_t>& servo_id_list, DynamixelParameter dp,
+uint8_t DynamixelComunicator::SyncRead( const vector<uint8_t>& servo_id_list, DynamixelAddress dp,
                             vector<int64_t>& data_int_list, vector<uint8_t>& read_id_list) {
   uint8_t num_servo = servo_id_list.size();
   uint8_t send_data[128] = {0};
@@ -545,12 +545,12 @@ uint8_t DynamixelComunicator::SyncRead( const vector<uint8_t>& servo_id_list, Dy
 /** @fn
  * @brief 複数のDynamixelの同一のアドレスから情報を読み込む,パケットを最小限にすることで高速化したもの．サーボ1つでも失敗するとすべて読み込めない
  * @param vector<uint8_t> servo_id_list 読み込むサーボのIDのリスト
- * @param DynamixelParameter dp 対象のパラメータのインスタンス
+ * @param DynamixelAddress dp 対象のパラメータのインスタンス
  * @param vector<int64_t> data_int_list 読み込んだデータのリスト．intのまま
  * @param vector<uint8_t> read_id_list 読み込めたサーボのIDのリスト
  * @return uint8_t 読み込めたか個数
  */
-uint8_t DynamixelComunicator::SyncRead_fast(const vector<uint8_t>& servo_id_list, DynamixelParameter dp,
+uint8_t DynamixelComunicator::SyncRead_fast(const vector<uint8_t>& servo_id_list, DynamixelAddress dp,
                             vector<int64_t>& data_int_list, vector<uint8_t>& read_id_list) {
 
 	uint8_t num_servo = servo_id_list.size();
@@ -647,17 +647,17 @@ uint8_t DynamixelComunicator::SyncRead_fast(const vector<uint8_t>& servo_id_list
 /** @fn
  * @brief Dynamixelから複数の情報を同時に読み込む
  * @param uint8_t servo_id 対象のID
- * @param vector<DynamixelParameter> dp_list 対象のパラメータのインスタンスの配列
+ * @param vector<DynamixelAddress> dp_list 対象のパラメータのインスタンスの配列
  * @param vector<int64_t>& data_int_list 読み込んだデータを格納する配列．intに変換済みのもの．
  * @return (void) 
  */
-void DynamixelComunicator::RangeRead(uint8_t servo_id, const vector<DynamixelParameter>& dp_list, vector<int64_t>& data_int_list) {
+void DynamixelComunicator::RangeRead(uint8_t servo_id, const vector<DynamixelAddress>& dp_list, vector<int64_t>& data_int_list) {
   // 引数の確認と初期化
   if (dp_list.size() != data_int_list.size()) data_int_list.resize(dp_list.size(), 0);
 
   // 読み込むデータの範囲を決定
-  DynamixelParameter dp_min = dp_list[0];
-  DynamixelParameter dp_max = dp_list[0];
+  DynamixelAddress dp_min = dp_list[0];
+  DynamixelAddress dp_max = dp_list[0];
   for ( auto dp : dp_list ) {
 	 dp_min = dp_min.address() < dp.address() ? dp_min : dp;
 	 dp_max = dp_max.address() > dp.address() ? dp_max : dp;
@@ -724,7 +724,7 @@ void DynamixelComunicator::RangeRead(uint8_t servo_id, const vector<DynamixelPar
 
 	// 正常なデータ
 	for (int i_dp=0; i_dp<dp_list.size(); i_dp++) {
-		const DynamixelParameter& dp = dp_list[i_dp];
+		const DynamixelAddress& dp = dp_list[i_dp];
 		uint8_t index = dp.address() - dp_min.address();
 		for(int i=0; i<dp.size(); i++) {
 			data_read_[i] = read_data[9+index+i];

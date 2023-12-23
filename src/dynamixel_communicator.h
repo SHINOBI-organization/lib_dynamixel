@@ -41,21 +41,21 @@ class DynamixelComunicator {
   void FactoryReset(uint8_t servo_id, FactoryResetLevel level);
   bool Ping(uint8_t servo_id);
 
-  void Write(uint8_t servo_id, DynamixelParameter dp, int64_t data_int);
-  int64_t Read(uint8_t servo_id, DynamixelParameter dp);
-  void SyncWrite(const vector<uint8_t>& servo_id_list, DynamixelParameter dp, const vector<int64_t>& data_int_list);
-  uint8_t SyncRead(const vector<uint8_t>& servo_id_list, DynamixelParameter dp, vector<int64_t>& data_int_list, vector<uint8_t>& read_id_list);
-  uint8_t SyncRead_fast(const vector<uint8_t>& servo_id_list, DynamixelParameter dp, vector<int64_t>& data_int_list, vector<uint8_t>& read_id_list);
-//   void BulkWrite(const vector<uint8_t>& servo_id_list, const vector<DynamixelParameter>& dp_list, const vector<int64_t>& data_int_list);
-// uint8_t BulkRead(const vector<uint8_t>& servo_id_list, const vector<DynamixelParameter>& dp_list, vector<int64_t>& data_int_list, vector<uint8_t>& read_id_list);
+  void Write(uint8_t servo_id, DynamixelAddress dp, int64_t data_int);
+  int64_t Read(uint8_t servo_id, DynamixelAddress dp);
+  void SyncWrite(const vector<uint8_t>& servo_id_list, DynamixelAddress dp, const vector<int64_t>& data_int_list);
+  uint8_t SyncRead(const vector<uint8_t>& servo_id_list, DynamixelAddress dp, vector<int64_t>& data_int_list, vector<uint8_t>& read_id_list);
+  uint8_t SyncRead_fast(const vector<uint8_t>& servo_id_list, DynamixelAddress dp, vector<int64_t>& data_int_list, vector<uint8_t>& read_id_list);
+//   void BulkWrite(const vector<uint8_t>& servo_id_list, const vector<DynamixelAddress>& dp_list, const vector<int64_t>& data_int_list);
+// uint8_t BulkRead(const vector<uint8_t>& servo_id_list, const vector<DynamixelAddress>& dp_list, vector<int64_t>& data_int_list, vector<uint8_t>& read_id_list);
 	// ここまではDynamixelSDKと同じ関数の独自実装，これ以降は独自関数
-// void RangeWrite(uint8_t servo_id, const vector<DynamixelParameter>& dp_list, const vector<int64_t>& data_int_list);
-  void RangeRead(uint8_t servo_id, const vector<DynamixelParameter>& dp_list, vector<int64_t>& data_int_list);
-//   void SyncRangeWrite(const vector<uint8_t>& servo_id_list, const vector<DynamixelParameter>& dp_list, const vector<vector<int64_t>>& data_int_list);
-//   uint8_t SyncRangeRead(const vector<uint8_t>& servo_id_list, const vector<DynamixelParameter>& dp_list, vector<vector<int64_t>>& data_int_list, vector<uint8_t>& read_id_list);
-//   uint8_t SyncRangeRead_fast(const vector<uint8_t>& servo_id_list, const vector<DynamixelParameter>& dp_list, vector<vector<int64_t>>& data_int_list, vector<uint8_t>& read_id_list);
-//   void BulkRangeWrite(const vector<uint8_t>& servo_id_list, const vector<DynamixelParameter>& dp_list, const vector<vector<int64_t>>& data_int_list);
-//   uint8_t BulkRangeRead(const vector<uint8_t>& servo_id_list, const vector<DynamixelParameter>& dp_list, vector<vector<int64_t>>& data_int_list, vector<uint8_t>& read_id_list);
+// void RangeWrite(uint8_t servo_id, const vector<DynamixelAddress>& dp_list, const vector<int64_t>& data_int_list);
+  void RangeRead(uint8_t servo_id, const vector<DynamixelAddress>& dp_list, vector<int64_t>& data_int_list);
+//   void SyncRangeWrite(const vector<uint8_t>& servo_id_list, const vector<DynamixelAddress>& dp_list, const vector<vector<int64_t>>& data_int_list);
+//   uint8_t SyncRangeRead(const vector<uint8_t>& servo_id_list, const vector<DynamixelAddress>& dp_list, vector<vector<int64_t>>& data_int_list, vector<uint8_t>& read_id_list);
+//   uint8_t SyncRangeRead_fast(const vector<uint8_t>& servo_id_list, const vector<DynamixelAddress>& dp_list, vector<vector<int64_t>>& data_int_list, vector<uint8_t>& read_id_list);
+//   void BulkRangeWrite(const vector<uint8_t>& servo_id_list, const vector<DynamixelAddress>& dp_list, const vector<vector<int64_t>>& data_int_list);
+//   uint8_t BulkRangeRead(const vector<uint8_t>& servo_id_list, const vector<DynamixelAddress>& dp_list, vector<vector<int64_t>>& data_int_list, vector<uint8_t>& read_id_list);
 
  private:
   uint16_t CalcChecksum(uint8_t data[], uint8_t length);

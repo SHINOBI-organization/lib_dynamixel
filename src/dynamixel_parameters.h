@@ -59,9 +59,9 @@ enum DynamixelDataType {
   TYPE_UINT32,
 };
 
-class DynamixelParameter {
+class DynamixelAddress {
  public:
-  DynamixelParameter( uint16_t address, DynamixelDataType data_type ) {
+  DynamixelAddress( uint16_t address, DynamixelDataType data_type ) {
     address_ = address;
     data_type_ = data_type;
 	switch (data_type_) {
@@ -85,63 +85,63 @@ class DynamixelParameter {
 };
 
 // 他のファイルから参照するための宣言
-    extern DynamixelParameter model_number          ;
-    extern DynamixelParameter id                    ;
-    extern DynamixelParameter baudrate              ;
-    extern DynamixelParameter return_delay_time     ;
+    extern DynamixelAddress model_number          ;
+    extern DynamixelAddress id                    ;
+    extern DynamixelAddress baudrate              ;
+    extern DynamixelAddress return_delay_time     ;
 
 namespace dyn_x {
-    extern DynamixelParameter drive_mode            ;
-    extern DynamixelParameter operating_mode        ;
-    extern DynamixelParameter shadow_id             ;
-    extern DynamixelParameter homing_offset         ;
-    extern DynamixelParameter homing_threshold      ;
-    extern DynamixelParameter temperature_limit     ;
-    extern DynamixelParameter max_voltage_limit     ;
-    extern DynamixelParameter min_voltage_limit     ;
-    extern DynamixelParameter pwm_limit             ;
-    extern DynamixelParameter current_limit         ;
-    extern DynamixelParameter acceleration_limit    ;
-    extern DynamixelParameter velocity_limit        ;
-    extern DynamixelParameter max_position_limit    ;
-    extern DynamixelParameter min_position_limit    ;
-    extern DynamixelParameter external_port_mode_1  ;
-    extern DynamixelParameter external_port_mode_2  ;
-    extern DynamixelParameter external_port_mode_3  ;
-    extern DynamixelParameter shutdown              ;
-    extern DynamixelParameter torque_enable         ;
-    extern DynamixelParameter led                   ;
-    extern DynamixelParameter status_return_level   ;
-    extern DynamixelParameter registered_instruction;
-    extern DynamixelParameter hardware_error_status ;
-    extern DynamixelParameter velocity_i_gain       ;
-    extern DynamixelParameter velocity_p_gain       ;
-    extern DynamixelParameter position_d_gain       ;
-    extern DynamixelParameter position_i_gain       ;
-    extern DynamixelParameter position_p_gain       ;
-    extern DynamixelParameter feedforward_acc_gain  ;
-    extern DynamixelParameter feedforward_vel_gain  ;
-    extern DynamixelParameter bus_watchbdog         ;
-    extern DynamixelParameter goal_pwm              ;
-    extern DynamixelParameter goal_current          ;
-    extern DynamixelParameter goal_velocity         ;
-    extern DynamixelParameter profile_acceleration  ;
-    extern DynamixelParameter profile_velocity      ;
-    extern DynamixelParameter goal_position         ;
-    extern DynamixelParameter realtime_tick         ;
-    extern DynamixelParameter moving                ;
-    extern DynamixelParameter moving_status         ;
-    extern DynamixelParameter present_pwm           ;
-    extern DynamixelParameter present_current       ;
-    extern DynamixelParameter present_velocity      ;
-    extern DynamixelParameter present_position      ;
-    extern DynamixelParameter velocity_trajectory   ;
-    extern DynamixelParameter position_trajectory   ;
-    extern DynamixelParameter present_input_voltage ;
-    extern DynamixelParameter present_temperture    ;
-    extern DynamixelParameter external_port_data_1  ;
-    extern DynamixelParameter external_port_data_2  ;
-    extern DynamixelParameter external_port_data_3  ;
+    extern DynamixelAddress drive_mode            ;
+    extern DynamixelAddress operating_mode        ;
+    extern DynamixelAddress shadow_id             ;
+    extern DynamixelAddress homing_offset         ;
+    extern DynamixelAddress homing_threshold      ;
+    extern DynamixelAddress temperature_limit     ;
+    extern DynamixelAddress max_voltage_limit     ;
+    extern DynamixelAddress min_voltage_limit     ;
+    extern DynamixelAddress pwm_limit             ;
+    extern DynamixelAddress current_limit         ;
+    extern DynamixelAddress acceleration_limit    ;
+    extern DynamixelAddress velocity_limit        ;
+    extern DynamixelAddress max_position_limit    ;
+    extern DynamixelAddress min_position_limit    ;
+    extern DynamixelAddress external_port_mode_1  ;
+    extern DynamixelAddress external_port_mode_2  ;
+    extern DynamixelAddress external_port_mode_3  ;
+    extern DynamixelAddress shutdown              ;
+    extern DynamixelAddress torque_enable         ;
+    extern DynamixelAddress led                   ;
+    extern DynamixelAddress status_return_level   ;
+    extern DynamixelAddress registered_instruction;
+    extern DynamixelAddress hardware_error_status ;
+    extern DynamixelAddress velocity_i_gain       ;
+    extern DynamixelAddress velocity_p_gain       ;
+    extern DynamixelAddress position_d_gain       ;
+    extern DynamixelAddress position_i_gain       ;
+    extern DynamixelAddress position_p_gain       ;
+    extern DynamixelAddress feedforward_acc_gain  ;
+    extern DynamixelAddress feedforward_vel_gain  ;
+    extern DynamixelAddress bus_watchbdog         ;
+    extern DynamixelAddress goal_pwm              ;
+    extern DynamixelAddress goal_current          ;
+    extern DynamixelAddress goal_velocity         ;
+    extern DynamixelAddress profile_acceleration  ;
+    extern DynamixelAddress profile_velocity      ;
+    extern DynamixelAddress goal_position         ;
+    extern DynamixelAddress realtime_tick         ;
+    extern DynamixelAddress moving                ;
+    extern DynamixelAddress moving_status         ;
+    extern DynamixelAddress present_pwm           ;
+    extern DynamixelAddress present_current       ;
+    extern DynamixelAddress present_velocity      ;
+    extern DynamixelAddress present_position      ;
+    extern DynamixelAddress velocity_trajectory   ;
+    extern DynamixelAddress position_trajectory   ;
+    extern DynamixelAddress present_input_voltage ;
+    extern DynamixelAddress present_temperture    ;
+    extern DynamixelAddress external_port_data_1  ;
+    extern DynamixelAddress external_port_data_2  ;
+    extern DynamixelAddress external_port_data_3  ;
 
     // velocity_unit
     // acceleration_unit
@@ -151,44 +151,44 @@ namespace dyn_x {
 } 
 
 namespace dyn_p{
-    extern DynamixelParameter drive_mode           ;
-    extern DynamixelParameter operating_mode       ;
-    extern DynamixelParameter homing_offset        ;
-    extern DynamixelParameter current_limit        ;
-    extern DynamixelParameter acceleration_limit   ;
-    extern DynamixelParameter velocity_limit       ;
-    extern DynamixelParameter max_position_limit   ;
-    extern DynamixelParameter min_position_limit   ;
-    extern DynamixelParameter external_port_mode_1 ;
-    extern DynamixelParameter external_port_mode_2 ;
-    extern DynamixelParameter external_port_mode_3 ;
-    extern DynamixelParameter external_port_mode_4 ;
-    extern DynamixelParameter shutdown             ;
-    extern DynamixelParameter torque_enable        ;
-    extern DynamixelParameter led_red              ;
-    extern DynamixelParameter led_green            ;
-    extern DynamixelParameter led_blue             ;
-    extern DynamixelParameter velocity_i_gain      ;
-    extern DynamixelParameter velocity_p_gain      ;
-    extern DynamixelParameter position_d_gain      ;
-    extern DynamixelParameter position_i_gain      ;
-    extern DynamixelParameter position_p_gain      ;
-    extern DynamixelParameter goal_current         ;
-    extern DynamixelParameter goal_velocity        ;
-    extern DynamixelParameter profile_acceleration ;
-    extern DynamixelParameter profile_velocity     ;
-    extern DynamixelParameter goal_position        ;
-    extern DynamixelParameter present_current      ;
-    extern DynamixelParameter present_velocity     ;
-    extern DynamixelParameter present_position     ;
-    extern DynamixelParameter present_input_voltage;
-    extern DynamixelParameter present_temperture   ;
-    extern DynamixelParameter external_port_data_1 ;
-    extern DynamixelParameter external_port_data_2 ;
-    extern DynamixelParameter external_port_data_3 ;
-    extern DynamixelParameter external_port_data_4 ;
-    extern DynamixelParameter status_return_level  ;
-    extern DynamixelParameter hardware_error_status;
+    extern DynamixelAddress drive_mode           ;
+    extern DynamixelAddress operating_mode       ;
+    extern DynamixelAddress homing_offset        ;
+    extern DynamixelAddress current_limit        ;
+    extern DynamixelAddress acceleration_limit   ;
+    extern DynamixelAddress velocity_limit       ;
+    extern DynamixelAddress max_position_limit   ;
+    extern DynamixelAddress min_position_limit   ;
+    extern DynamixelAddress external_port_mode_1 ;
+    extern DynamixelAddress external_port_mode_2 ;
+    extern DynamixelAddress external_port_mode_3 ;
+    extern DynamixelAddress external_port_mode_4 ;
+    extern DynamixelAddress shutdown             ;
+    extern DynamixelAddress torque_enable        ;
+    extern DynamixelAddress led_red              ;
+    extern DynamixelAddress led_green            ;
+    extern DynamixelAddress led_blue             ;
+    extern DynamixelAddress velocity_i_gain      ;
+    extern DynamixelAddress velocity_p_gain      ;
+    extern DynamixelAddress position_d_gain      ;
+    extern DynamixelAddress position_i_gain      ;
+    extern DynamixelAddress position_p_gain      ;
+    extern DynamixelAddress goal_current         ;
+    extern DynamixelAddress goal_velocity        ;
+    extern DynamixelAddress profile_acceleration ;
+    extern DynamixelAddress profile_velocity     ;
+    extern DynamixelAddress goal_position        ;
+    extern DynamixelAddress present_current      ;
+    extern DynamixelAddress present_velocity     ;
+    extern DynamixelAddress present_position     ;
+    extern DynamixelAddress present_input_voltage;
+    extern DynamixelAddress present_temperture   ;
+    extern DynamixelAddress external_port_data_1 ;
+    extern DynamixelAddress external_port_data_2 ;
+    extern DynamixelAddress external_port_data_3 ;
+    extern DynamixelAddress external_port_data_4 ;
+    extern DynamixelAddress status_return_level  ;
+    extern DynamixelAddress hardware_error_status;
 }
 
 #endif /* DYNAMIXEL_PARAMETERS_H_ */
