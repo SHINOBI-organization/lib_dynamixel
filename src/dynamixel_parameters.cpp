@@ -1,16 +1,13 @@
 #include "dynamixel_parameters.h"
 
-// 道川 
-// あまり良くない実装だと思いながら前例踏襲で書いている． 
-// 型番ごとに微妙にパラメータ(特にvaleu_par_bit)が異なるので，以下のようにべた書きすると事故の基．  -> parameterには持たせずに，別で持たせるべきかな．
-// 自動認識する仕組みを導入したい． ros2移行時に一緒にやるつもり． 
-
-// dynamixel X series   
-namespace dyn_x {
+// dynamixel common
     DynamixelParameter model_number          (  0, TYPE_UINT16);
     DynamixelParameter id                    (  7, TYPE_UINT8 );
     DynamixelParameter baudrate              (  8, TYPE_UINT8 );
-    DynamixelParameter return_deray_time     (  9, TYPE_UINT8 );
+    DynamixelParameter return_delay_time     (  9, TYPE_UINT8 );
+
+// dynamixel X series   
+namespace dyn_x {
     DynamixelParameter drive_mode            ( 10, TYPE_UINT8 );
     DynamixelParameter operating_mode        ( 11, TYPE_UINT8 );
     DynamixelParameter shadow_id             ( 12, TYPE_UINT8 );
@@ -67,9 +64,6 @@ namespace dyn_x {
 
 // dynamixel P series (old: pro plus)
 namespace dyn_p {
-    DynamixelParameter id                   ( 7,  TYPE_UINT8 );
-    DynamixelParameter baudrate             ( 8,  TYPE_UINT8 );
-    DynamixelParameter return_deray_time    ( 9,  TYPE_UINT8 );
     DynamixelParameter drive_mode           ( 10, TYPE_UINT8 );
     DynamixelParameter operating_mode       ( 11, TYPE_UINT8 );
     DynamixelParameter homing_offset        ( 20, TYPE_INT32 ); //, 42: M_PI/303750 54: M_PI/501923

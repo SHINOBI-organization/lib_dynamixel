@@ -85,11 +85,12 @@ class DynamixelParameter {
 };
 
 // 他のファイルから参照するための宣言
-namespace dyn_x {
     extern DynamixelParameter model_number          ;
     extern DynamixelParameter id                    ;
     extern DynamixelParameter baudrate              ;
-    extern DynamixelParameter return_deray_time     ;
+    extern DynamixelParameter return_delay_time     ;
+
+namespace dyn_x {
     extern DynamixelParameter drive_mode            ;
     extern DynamixelParameter operating_mode        ;
     extern DynamixelParameter shadow_id             ;
@@ -141,12 +142,15 @@ namespace dyn_x {
     extern DynamixelParameter external_port_data_1  ;
     extern DynamixelParameter external_port_data_2  ;
     extern DynamixelParameter external_port_data_3  ;
+
+    // velocity_unit
+    // acceleration_unit
+    // position_unit
+    // current_unit
+    // return_delay_time_unit // デフォルト値をそれ以外の定義をする必要がある
 } 
 
 namespace dyn_p{
-    extern DynamixelParameter id                   ;
-    extern DynamixelParameter baudrate             ;
-    extern DynamixelParameter return_deray_time    ;
     extern DynamixelParameter drive_mode           ;
     extern DynamixelParameter operating_mode       ;
     extern DynamixelParameter homing_offset        ;
