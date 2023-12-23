@@ -1,6 +1,8 @@
 #ifndef DYNAMIXEL_COMMUNICATOR_H_
 #define DYNAMIXEL_COMMUNICATOR_H_
 
+#include <map>
+using std::map;
 #include <vector>
 using std::vector;
 #include <string>
@@ -31,32 +33,30 @@ class DynamixelComunicator {
 
   void set_status_return_level(int level) { status_return_level_ = level; }
 
-  bool error_last_read(){ return error_last_read_; }
-
   string port_name(){ return string(port_name_); }
+
+  bool error_last_read(){ return error_last_read_; }
 
   bool OpenPort();
   bool ClosePort();
   void Reboot(uint8_t servo_id);
   void FactoryReset(uint8_t servo_id, FactoryResetLevel level);
   bool Ping(uint8_t servo_id);
-
-  void Write(uint8_t servo_id, DynamixelAddress dp, int64_t data_int);
-  int64_t Read(uint8_t servo_id, DynamixelAddress dp);
-  void SyncWrite(const vector<uint8_t>& servo_id_list, DynamixelAddress dp, const vector<int64_t>& data_int_list);
-  uint8_t SyncRead(const vector<uint8_t>& servo_id_list, DynamixelAddress dp, vector<int64_t>& data_int_list, vector<uint8_t>& read_id_list);
-  uint8_t SyncRead_fast(const vector<uint8_t>& servo_id_list, DynamixelAddress dp, vector<int64_t>& data_int_list, vector<uint8_t>& read_id_list);
-//   void BulkWrite(const vector<uint8_t>& servo_id_list, const vector<DynamixelAddress>& dp_list, const vector<int64_t>& data_int_list);
-// uint8_t BulkRead(const vector<uint8_t>& servo_id_list, const vector<DynamixelAddress>& dp_list, vector<int64_t>& data_int_list, vector<uint8_t>& read_id_list);
-	// ここまではDynamixelSDKと同じ関数の独自実装，これ以降は独自関数
-// void RangeWrite(uint8_t servo_id, const vector<DynamixelAddress>& dp_list, const vector<int64_t>& data_int_list);
-  void RangeRead(uint8_t servo_id, const vector<DynamixelAddress>& dp_list, vector<int64_t>& data_int_list);
-//   void SyncRangeWrite(const vector<uint8_t>& servo_id_list, const vector<DynamixelAddress>& dp_list, const vector<vector<int64_t>>& data_int_list);
-//   uint8_t SyncRangeRead(const vector<uint8_t>& servo_id_list, const vector<DynamixelAddress>& dp_list, vector<vector<int64_t>>& data_int_list, vector<uint8_t>& read_id_list);
-//   uint8_t SyncRangeRead_fast(const vector<uint8_t>& servo_id_list, const vector<DynamixelAddress>& dp_list, vector<vector<int64_t>>& data_int_list, vector<uint8_t>& read_id_list);
-//   void BulkRangeWrite(const vector<uint8_t>& servo_id_list, const vector<DynamixelAddress>& dp_list, const vector<vector<int64_t>>& data_int_list);
-//   uint8_t BulkRangeRead(const vector<uint8_t>& servo_id_list, const vector<DynamixelAddress>& dp_list, vector<vector<int64_t>>& data_int_list, vector<uint8_t>& read_id_list);
-
+  // パラメータ1つ
+  void Write        (DynamixelAddress dp, uint8_t                servo_id,      int64_t                data_int     );
+  void SyncWrite    (DynamixelAddress dp, const vector<uint8_t>& servo_id_list, const vector<int64_t>& data_int_list);
+  void SyncWrite    (DynamixelAddress dp, const map<uint8_t, int64_t>& id_data_int_map);
+  int64_t               Read         (DynamixelAddress dp, uint8_t                servo_id     );
+  map<uint8_t, int64_t> SyncRead     (DynamixelAddress dp, const vector<uint8_t>& servo_id_list);
+  map<uint8_t, int64_t> SyncRead_fast(DynamixelAddress dp, const vector<uint8_t>& servo_id_list);
+  // 複数パラメータ同時
+//   void Write        (const vector<DynamixelAddress>& dp_list, uint8_t                servo_id,      const vector<int64_t>&               data_int_list);
+//   void SyncWrite    (const vector<DynamixelAddress>& dp_list, const vector<uint8_t>& servo_id_list, const vector<vector<int64_t>>&       data_int_list);
+//   void SyncWrite    (const vector<DynamixelAddress>& dp_list, const map<uint8_t, vector<int64_t>>& id_data_int_map);
+  vector<int64_t>               Read         (const vector<DynamixelAddress>& dp_list, uint8_t                servo_id     );
+//   map<uint8_t, vector<int64_t>> SyncRead     (const vector<DynamixelAddress>& dp_list, const vector<uint8_t>& servo_id_list);
+//   map<uint8_t, vector<int64_t>> SyncRead_fast(const vector<DynamixelAddress>& dp_list, const vector<uint8_t>& servo_id_list);
+  
  private:
   uint16_t CalcChecksum(uint8_t data[], uint8_t length);
   void EncodeDataWrite(DynamixelDataType type, int64_t data_int);
