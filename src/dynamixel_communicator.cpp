@@ -298,6 +298,10 @@ bool DynamixelComunicator::Ping(uint8_t servo_id) {
   send_data[9] = (sum>>8) & 0xFF;
   port_handler_->writePort(send_data, 10);
 
+  port_handler_->setPacketTimeout( uint16_t(14) );
+  while(port_handler_->getBytesAvailable() < 14) 
+    if (port_handler_->isPacketTimeout()) return false;
+
   uint8_t read_data[14];
   if(port_handler_->readPort(read_data, 14) == 14 and read_data[4] == servo_id) {
     return true;
@@ -311,9 +315,9 @@ bool DynamixelComunicator::Ping(uint8_t servo_id) {
  * @param DynamixelAddress dp 対象のパラメータのインスタンス
  * @param uint8_t servo_id 対象のID
  * @param int64_t data_int 書き込むデータ．intに変換済みのもの．どの型にも対応できるようにint64_t
- * @return void
+ * @return  bool 通信成功判定
  */
-void DynamixelComunicator::Write(DynamixelAddress dp, uint8_t servo_id, int64_t data_int) {
+bool DynamixelComunicator::Write(DynamixelAddress dp, uint8_t servo_id, int64_t data_int) {
   uint8_t send_data[20] = {0};
   uint16_t length = dp.size()+5;
   send_data[0] = HEADER[0];
@@ -337,18 +341,45 @@ void DynamixelComunicator::Write(DynamixelAddress dp, uint8_t servo_id, int64_t 
   port_handler_->clearPort();
   port_handler_->writePort(send_data, 12+dp.size());
 
-  if (status_return_level_ == 2) {
-    port_handler_->setPacketTimeout( uint16_t(11) );
-    while(port_handler_->getBytesAvailable() < 11) {
-      if (port_handler_->isPacketTimeout()) {
-        printf("Read Error(time out): ID %d, available bytes %d\n", servo_id, port_handler_->getBytesAvailable());
-        error_last_read_ = true;
-        return;
-      }
+  if (status_return_level_ != 2) return true;
+
+  port_handler_->setPacketTimeout( uint16_t(11) );
+  while(port_handler_->getBytesAvailable() < 11) {
+    if (port_handler_->isPacketTimeout()) {
+      printf("Write Error(return status time out): ID %d, available bytes %d/11\n", servo_id, port_handler_->getBytesAvailable());
+      error_last_read_ = true;
+      return false;
     }
-    uint8_t read_data[11];
-    port_handler_->readPort(read_data, 11);
   }
+  uint8_t read_data[11];
+  uint8_t read_length = port_handler_->readPort(read_data, 11);
+  if (read_data[0] != HEADER[0] or
+      read_data[1] != HEADER[1] or
+      read_data[2] != HEADER[2] or
+      read_data[3] != HEADER[3] or
+      read_data[4] != servo_id) {
+    printf("Write Error(return status header): ID %d\n", servo_id);
+    error_last_read_ = true;
+    return false;
+  }
+  uint16_t sum_est = CalcChecksum(read_data, 9);
+  uint16_t sum_read = uint16_t(read_data[9]) | uint16_t(read_data[9+1])<<8;
+  if (sum_est != sum_read) {
+    printf("Write Error(crc): ID %d, est:%d, read:%d\n", servo_id, sum_est, sum_read);
+    error_last_read_ = true;
+    return false;
+  }
+   // 正常なデータ
+  uint8_t error = (uint8_t)read_data[8]; // error
+  if ( error & 0x80 ) { // error の最上位ビットが1のとき，ハードウェアエラーが発生している
+    // printf("Write Warn(detected hardware error) : id [%d]\n", (int)servo_id); // うるさいので消す．
+  }
+  if ( error & 0x7F ) { // error の最上位ビット以外が1のとき，通信状態の異常がある
+    printf("Write Error(return status packet error) : id [%d]\n", (int)servo_id);
+	error_last_read_ = true;
+    return false;
+  }
+  return true;
 }
 
 /** @fn
@@ -427,9 +458,9 @@ int64_t DynamixelComunicator::Read(DynamixelAddress dp, uint8_t servo_id) {
  * @param DynamixelAddress dp 対象のパラメータのインスタンス
  * @param vector<uint8_t> servo_id_list servo_id_list 書き込むサーボのIDのベクトル
  * @param vector<uint64_t> data_int_list 書き込むデータのリスト．intに変換済みのもの．どの型にも対応できるようにint64_t
- * @return void
+ * @return bool 通信成功判定
  */
-void DynamixelComunicator::SyncWrite(DynamixelAddress dp,  const vector<uint8_t>& servo_id_list, const vector<int64_t>& data_int_list) {
+bool DynamixelComunicator::SyncWrite(DynamixelAddress dp,  const vector<uint8_t>& servo_id_list, const vector<int64_t>& data_int_list) {
   uint8_t send_data[512] = {0};
   int8_t num_servo = servo_id_list.size();
   uint16_t length = (1+dp.size())*num_servo+7;
@@ -458,22 +489,23 @@ void DynamixelComunicator::SyncWrite(DynamixelAddress dp,  const vector<uint8_t>
 
   port_handler_->clearPort();
   port_handler_->writePort(send_data, 14+num_servo*(dp.size()+1));
+  return true;
 }
 
 /** @fn
  * @brief 複数のDynamixelの同一のアドレスに情報書き込む
  * @param DynamixelAddress dp 対象のパラメータのインスタンス
  * @param map<uint8_t, int64_t> id_data_int_map 書き込むサーボのIDと書き込むデータのマップ
- * @return void
+ * @return  bool 通信成功判定
  */
-void DynamixelComunicator::SyncWrite(DynamixelAddress dp, const map<uint8_t, int64_t>& id_data_int_map) {
+bool DynamixelComunicator::SyncWrite(DynamixelAddress dp, const map<uint8_t, int64_t>& id_data_int_map) {
     std::vector<uint8_t>  servo_id_list; servo_id_list.reserve(id_data_int_map.size());
     std::vector<int64_t> data_int_list; data_int_list.reserve(id_data_int_map.size());
     for (const auto& id_data : id_data_int_map) {
         servo_id_list.push_back(id_data.first);    // キー（サーボID）を追加
         data_int_list.push_back(id_data.second);   // 値（データ）を追加
     }
-    SyncWrite( dp, servo_id_list, data_int_list );
+    return SyncWrite( dp, servo_id_list, data_int_list );
 }
 
 /** @fn
