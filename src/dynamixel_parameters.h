@@ -59,11 +59,25 @@ enum DynamixelDataType {
   TYPE_UINT32,
 };
 
+enum DynamixelPhysicalUnit {
+  NOUNIT,
+  UNIT_POSITION,
+  UNIT_VELOCITY,
+  UNIT_ACCELERATION,
+  UNIT_CURRENT,
+  UNIT_VOLTAGE,
+  UNIT_TEMPERATURE,
+  UNIT_PWM,
+  UNIT_RETURN_DELAY_TIME,
+  UNIT_BUS_WATCHDOG,
+  UNIT_REALTIME_TICK,
+};
+
+
 class DynamixelAddress {
  public:
-  DynamixelAddress( uint16_t address, DynamixelDataType data_type ) {
-    address_ = address;
-    data_type_ = data_type;
+  DynamixelAddress( uint16_t address, DynamixelDataType data_type, DynamixelPhysicalUnit physical_unit = NOUNIT ):
+    address_(address), data_type_(data_type), physical_unit_(physical_unit) {
 	switch (data_type_) {
         case TYPE_INT8:
         case TYPE_UINT8:  size_ = 1; break;
@@ -82,113 +96,127 @@ class DynamixelAddress {
   uint16_t address_;
   uint8_t size_;
   DynamixelDataType data_type_;
+  DynamixelPhysicalUnit physical_unit_;
 };
 
-// 他のファイルから参照するための宣言
-    extern DynamixelAddress model_number          ;
-    extern DynamixelAddress id                    ;
-    extern DynamixelAddress baudrate              ;
-    extern DynamixelAddress return_delay_time     ;
+// dynamixel common
+inline DynamixelAddress model_number          (  0, TYPE_UINT16);
+inline DynamixelAddress id                    (  7, TYPE_UINT8 );
+inline DynamixelAddress baudrate              (  8, TYPE_UINT8 );
+inline DynamixelAddress return_delay_time     (  9, TYPE_UINT8 , UNIT_RETURN_DELAY_TIME);
 
+// dynamixel X series   
 namespace dyn_x {
-    extern DynamixelAddress drive_mode            ;
-    extern DynamixelAddress operating_mode        ;
-    extern DynamixelAddress shadow_id             ;
-    extern DynamixelAddress homing_offset         ;
-    extern DynamixelAddress homing_threshold      ;
-    extern DynamixelAddress temperature_limit     ;
-    extern DynamixelAddress max_voltage_limit     ;
-    extern DynamixelAddress min_voltage_limit     ;
-    extern DynamixelAddress pwm_limit             ;
-    extern DynamixelAddress current_limit         ;
-    extern DynamixelAddress acceleration_limit    ;
-    extern DynamixelAddress velocity_limit        ;
-    extern DynamixelAddress max_position_limit    ;
-    extern DynamixelAddress min_position_limit    ;
-    extern DynamixelAddress external_port_mode_1  ;
-    extern DynamixelAddress external_port_mode_2  ;
-    extern DynamixelAddress external_port_mode_3  ;
-    extern DynamixelAddress shutdown              ;
-    extern DynamixelAddress torque_enable         ;
-    extern DynamixelAddress led                   ;
-    extern DynamixelAddress status_return_level   ;
-    extern DynamixelAddress registered_instruction;
-    extern DynamixelAddress hardware_error_status ;
-    extern DynamixelAddress velocity_i_gain       ;
-    extern DynamixelAddress velocity_p_gain       ;
-    extern DynamixelAddress position_d_gain       ;
-    extern DynamixelAddress position_i_gain       ;
-    extern DynamixelAddress position_p_gain       ;
-    extern DynamixelAddress feedforward_acc_gain  ;
-    extern DynamixelAddress feedforward_vel_gain  ;
-    extern DynamixelAddress bus_watchbdog         ;
-    extern DynamixelAddress goal_pwm              ;
-    extern DynamixelAddress goal_current          ;
-    extern DynamixelAddress goal_velocity         ;
-    extern DynamixelAddress profile_acceleration  ;
-    extern DynamixelAddress profile_velocity      ;
-    extern DynamixelAddress goal_position         ;
-    extern DynamixelAddress realtime_tick         ;
-    extern DynamixelAddress moving                ;
-    extern DynamixelAddress moving_status         ;
-    extern DynamixelAddress present_pwm           ;
-    extern DynamixelAddress present_current       ;
-    extern DynamixelAddress present_velocity      ;
-    extern DynamixelAddress present_position      ;
-    extern DynamixelAddress velocity_trajectory   ;
-    extern DynamixelAddress position_trajectory   ;
-    extern DynamixelAddress present_input_voltage ;
-    extern DynamixelAddress present_temperture    ;
-    extern DynamixelAddress external_port_data_1  ;
-    extern DynamixelAddress external_port_data_2  ;
-    extern DynamixelAddress external_port_data_3  ;
+    inline DynamixelAddress drive_mode            ( 10, TYPE_UINT8 );
+    inline DynamixelAddress operating_mode        ( 11, TYPE_UINT8 );
+    inline DynamixelAddress shadow_id             ( 12, TYPE_UINT8 );
+    inline DynamixelAddress homing_offset         ( 20, TYPE_INT32 , UNIT_POSITION);
+    inline DynamixelAddress homing_threshold      ( 24, TYPE_UINT32); 
+    inline DynamixelAddress temperature_limit     ( 31, TYPE_UINT8 , UNIT_TEMPERATURE);
+    inline DynamixelAddress max_voltage_limit     ( 32, TYPE_UINT16, UNIT_VOLTAGE);
+    inline DynamixelAddress min_voltage_limit     ( 34, TYPE_UINT16, UNIT_VOLTAGE);
+    inline DynamixelAddress pwm_limit             ( 36, TYPE_UINT16, UNIT_PWM);
+    inline DynamixelAddress current_limit         ( 38, TYPE_UINT16, UNIT_CURRENT);
+    inline DynamixelAddress acceleration_limit    ( 40, TYPE_UINT32, UNIT_ACCELERATION);
+    inline DynamixelAddress velocity_limit        ( 44, TYPE_UINT32, UNIT_VELOCITY);
+    inline DynamixelAddress max_position_limit    ( 48, TYPE_UINT32, UNIT_POSITION);
+    inline DynamixelAddress min_position_limit    ( 52, TYPE_UINT32, UNIT_POSITION);
+    inline DynamixelAddress external_port_mode_1  ( 56, TYPE_UINT8 );
+    inline DynamixelAddress external_port_mode_2  ( 57, TYPE_UINT8 );
+    inline DynamixelAddress external_port_mode_3  ( 58, TYPE_UINT8 );
+    inline DynamixelAddress shutdown              ( 63, TYPE_UINT8 );
+    inline DynamixelAddress torque_enable         ( 64, TYPE_UINT8 );
+    inline DynamixelAddress led                   ( 65, TYPE_UINT8 );
+    inline DynamixelAddress status_return_level   ( 68, TYPE_UINT8 );
+    inline DynamixelAddress registered_instruction( 69, TYPE_UINT8 );
+    inline DynamixelAddress hardware_error_status ( 70, TYPE_UINT8 );
+    inline DynamixelAddress velocity_i_gain       ( 76, TYPE_UINT16); // 型番によってデフォルト値が異なる
+    inline DynamixelAddress velocity_p_gain       ( 78, TYPE_UINT16); // 型番によってデフォルト値が異なる
+    inline DynamixelAddress position_d_gain       ( 80, TYPE_UINT16); // 型番によってデフォルト値が異なる
+    inline DynamixelAddress position_i_gain       ( 82, TYPE_UINT16); // 型番によってデフォルト値が異なる
+    inline DynamixelAddress position_p_gain       ( 84, TYPE_UINT16); // 型番によってデフォルト値が異なる
+    inline DynamixelAddress feedforward_acc_gain  ( 88, TYPE_UINT16);
+    inline DynamixelAddress feedforward_vel_gain  ( 90, TYPE_UINT16);
+    inline DynamixelAddress bus_watchbdog         ( 98, TYPE_INT8  , UNIT_BUS_WATCHDOG);
+    inline DynamixelAddress goal_pwm              (100, TYPE_INT16 , UNIT_PWM);
+    inline DynamixelAddress goal_current          (102, TYPE_INT16 , UNIT_CURRENT);
+    inline DynamixelAddress goal_velocity         (104, TYPE_INT32 , UNIT_VELOCITY);
+    inline DynamixelAddress profile_acceleration  (108, TYPE_INT32 , UNIT_ACCELERATION);
+    inline DynamixelAddress profile_velocity      (112, TYPE_INT32 , UNIT_VELOCITY);
+    inline DynamixelAddress goal_position         (116, TYPE_INT32 , UNIT_POSITION);
+    inline DynamixelAddress realtime_tick         (120, TYPE_UINT16, UNIT_REALTIME_TICK);
+    inline DynamixelAddress moving                (122, TYPE_UINT8 );
+    inline DynamixelAddress moving_status         (123, TYPE_UINT8 );
+    inline DynamixelAddress present_pwm           (124, TYPE_INT16 , UNIT_PWM);
+    inline DynamixelAddress present_current       (126, TYPE_INT16 , UNIT_CURRENT); 
+    inline DynamixelAddress present_velocity      (128, TYPE_INT32 , UNIT_VELOCITY);
+    inline DynamixelAddress present_position      (132, TYPE_INT32 , UNIT_POSITION);
+    inline DynamixelAddress velocity_trajectory   (136, TYPE_INT32 );
+    inline DynamixelAddress position_trajectory   (140, TYPE_INT32 );
+    inline DynamixelAddress present_input_voltage (144, TYPE_UINT16, UNIT_VOLTAGE);
+    inline DynamixelAddress present_temperture    (146, TYPE_UINT8 , UNIT_TEMPERATURE);
+    inline DynamixelAddress external_port_data_1  (152, TYPE_UINT16);
+    inline DynamixelAddress external_port_data_2  (154, TYPE_UINT16);
+    inline DynamixelAddress external_port_data_3  (156, TYPE_UINT16);
+}// 以後Indirect Address, うまく実装して取り込みたい．
 
-    // velocity_unit
-    // acceleration_unit
-    // position_unit
-    // current_unit
-    // return_delay_time_unit // デフォルト値をそれ以外の定義をする必要がある
-} 
-
-namespace dyn_p{
-    extern DynamixelAddress drive_mode           ;
-    extern DynamixelAddress operating_mode       ;
-    extern DynamixelAddress homing_offset        ;
-    extern DynamixelAddress current_limit        ;
-    extern DynamixelAddress acceleration_limit   ;
-    extern DynamixelAddress velocity_limit       ;
-    extern DynamixelAddress max_position_limit   ;
-    extern DynamixelAddress min_position_limit   ;
-    extern DynamixelAddress external_port_mode_1 ;
-    extern DynamixelAddress external_port_mode_2 ;
-    extern DynamixelAddress external_port_mode_3 ;
-    extern DynamixelAddress external_port_mode_4 ;
-    extern DynamixelAddress shutdown             ;
-    extern DynamixelAddress torque_enable        ;
-    extern DynamixelAddress led_red              ;
-    extern DynamixelAddress led_green            ;
-    extern DynamixelAddress led_blue             ;
-    extern DynamixelAddress velocity_i_gain      ;
-    extern DynamixelAddress velocity_p_gain      ;
-    extern DynamixelAddress position_d_gain      ;
-    extern DynamixelAddress position_i_gain      ;
-    extern DynamixelAddress position_p_gain      ;
-    extern DynamixelAddress goal_current         ;
-    extern DynamixelAddress goal_velocity        ;
-    extern DynamixelAddress profile_acceleration ;
-    extern DynamixelAddress profile_velocity     ;
-    extern DynamixelAddress goal_position        ;
-    extern DynamixelAddress present_current      ;
-    extern DynamixelAddress present_velocity     ;
-    extern DynamixelAddress present_position     ;
-    extern DynamixelAddress present_input_voltage;
-    extern DynamixelAddress present_temperture   ;
-    extern DynamixelAddress external_port_data_1 ;
-    extern DynamixelAddress external_port_data_2 ;
-    extern DynamixelAddress external_port_data_3 ;
-    extern DynamixelAddress external_port_data_4 ;
-    extern DynamixelAddress status_return_level  ;
-    extern DynamixelAddress hardware_error_status;
+// dynamixel P series (old: pro plus)
+namespace dyn_p {
+    inline DynamixelAddress drive_mode            ( 10, TYPE_UINT8 );
+    inline DynamixelAddress operating_mode        ( 11, TYPE_UINT8 );
+    inline DynamixelAddress shadow_id             ( 12, TYPE_UINT8 );
+    inline DynamixelAddress homing_offset         ( 20, TYPE_INT32 , UNIT_POSITION);
+    inline DynamixelAddress homing_threshold      ( 24, TYPE_UINT32);
+    inline DynamixelAddress temperature_limit     ( 31, TYPE_UINT8 , UNIT_TEMPERATURE);
+    inline DynamixelAddress max_voltage_limit     ( 32, TYPE_UINT16, UNIT_VOLTAGE);
+    inline DynamixelAddress min_voltage_limit     ( 34, TYPE_UINT16, UNIT_VOLTAGE);
+    inline DynamixelAddress pwm_limit             ( 36, TYPE_UINT16, UNIT_PWM);
+    inline DynamixelAddress current_limit         ( 38, TYPE_UINT16, UNIT_CURRENT);
+    inline DynamixelAddress acceleration_limit    ( 38, TYPE_UINT32, UNIT_ACCELERATION);
+    inline DynamixelAddress velocity_limit        ( 38, TYPE_UINT32, UNIT_VELOCITY);
+    inline DynamixelAddress max_position_limit    ( 48, TYPE_INT32 , UNIT_POSITION);
+    inline DynamixelAddress min_position_limit    ( 52, TYPE_INT32 , UNIT_POSITION);
+    inline DynamixelAddress external_port_mode_1  ( 56, TYPE_UINT8 );
+    inline DynamixelAddress external_port_mode_2  ( 57, TYPE_UINT8 );
+    inline DynamixelAddress external_port_mode_3  ( 58, TYPE_UINT8 );
+    inline DynamixelAddress external_port_mode_4  ( 59, TYPE_UINT8 );
+    inline DynamixelAddress shutdown              ( 63, TYPE_UINT8 );
+    inline DynamixelAddress torque_enable         (512, TYPE_UINT8 );
+    inline DynamixelAddress led_red               (513, TYPE_UINT8 );
+    inline DynamixelAddress led_green             (514, TYPE_UINT8 );
+    inline DynamixelAddress led_blue              (515, TYPE_UINT8 );
+    inline DynamixelAddress status_return_level   (516, TYPE_UINT8 );
+    inline DynamixelAddress registered_instruction(517, TYPE_UINT8 );
+    inline DynamixelAddress hardware_error_status (518, TYPE_UINT8 );
+    inline DynamixelAddress velocity_i_gain       (524, TYPE_UINT16);
+    inline DynamixelAddress velocity_p_gain       (526, TYPE_UINT16);
+    inline DynamixelAddress position_d_gain       (528, TYPE_UINT16);
+    inline DynamixelAddress position_i_gain       (530, TYPE_UINT16);
+    inline DynamixelAddress position_p_gain       (532, TYPE_UINT16);
+    inline DynamixelAddress bus_watchbdog         (546, TYPE_UINT8 , UNIT_BUS_WATCHDOG);
+    inline DynamixelAddress goal_pwm              (548, TYPE_INT16 , UNIT_PWM);
+    inline DynamixelAddress goal_current          (550, TYPE_INT16 , UNIT_CURRENT);
+    inline DynamixelAddress goal_velocity         (552, TYPE_INT32 , UNIT_VELOCITY);
+    inline DynamixelAddress profile_acceleration  (556, TYPE_UINT32, UNIT_ACCELERATION);
+    inline DynamixelAddress profile_velocity      (560, TYPE_UINT32, UNIT_VELOCITY);
+    inline DynamixelAddress goal_position         (564, TYPE_INT32 , UNIT_POSITION);
+    inline DynamixelAddress realtime_tick         (568, TYPE_UINT16, UNIT_REALTIME_TICK);
+    inline DynamixelAddress moving                (570, TYPE_UINT8 );
+    inline DynamixelAddress moving_status         (571, TYPE_UINT8 );
+    inline DynamixelAddress present_pwm           (572, TYPE_INT16 , UNIT_PWM);
+    inline DynamixelAddress present_current       (574, TYPE_INT16 , UNIT_CURRENT); 
+    inline DynamixelAddress present_velocity      (576, TYPE_INT32 , UNIT_VELOCITY);
+    inline DynamixelAddress present_position      (580, TYPE_INT32 , UNIT_POSITION);
+    inline DynamixelAddress velocity_trajectory   (584, TYPE_INT32 );
+    inline DynamixelAddress position_trajectory   (588, TYPE_INT32 );
+    inline DynamixelAddress present_input_voltage (592, TYPE_UINT16, UNIT_VOLTAGE);
+    inline DynamixelAddress present_temperture    (594, TYPE_UINT8 , UNIT_TEMPERATURE);
+    inline DynamixelAddress external_port_data_1  (600, TYPE_UINT16);
+    inline DynamixelAddress external_port_data_2  (602, TYPE_UINT16);
+    inline DynamixelAddress external_port_data_3  (604, TYPE_UINT16);
+    inline DynamixelAddress external_port_data_4  (606, TYPE_UINT16);
 }
+
+
 
 #endif /* DYNAMIXEL_PARAMETERS_H_ */
