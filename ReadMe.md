@@ -2,6 +2,7 @@
 
 Robotis社の[Dynamixel](https://e-shop.robotis.co.jp/list.php?c_id=89)をROSから制御するためのライブラリ.  
 基本的にROSで使うことを想定しているので，単体でのビルドは試してない．
+ROS1に組み込んだものが[こちら](https://github.com/SHINOBI-organization/DynamixelHandler-ros1/tree/main)
 
 ## 初期設定と注意事項
 
