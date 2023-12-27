@@ -1,7 +1,59 @@
 #ifndef DYNAMIXEL_PARAMETERS_H_
 #define DYNAMIXEL_PARAMETERS_H_
 
+#include <cassert>
 #include <stdint.h>
+
+enum DynamixelModelNumber {
+  // Dynamixel X series
+  MODEL_XL330_M077	= 1190,
+  MODEL_XL330_M288	= 1200,
+  MODEL_XC330_T181	= 1210,
+  MODEL_XC330_T288	= 1220,
+  MODEL_XC330_M181	= 1230,
+  MODEL_XC330_M288	= 1240,
+  MODEL_XL430_W250	= 1060,
+  MODEL_XC430_W150	= 1070,
+  MODEL_XC430_W250	= 1080,
+  MODEL_2XL430_W250	= 1090,
+  MODEL_2XC430_W250	= 1160,
+  MODEL_XM430_W210	= 1030,
+  MODEL_XH430_W210	= 1010,
+  MODEL_XH430_V210	= 1050,
+  MODEL_XD430_T210	= 1011,
+  MODEL_XM430_W350	= 1020,
+  MODEL_XH430_W350	= 1000,
+  MODEL_XH430_V350	= 1040,
+  MODEL_XD430_T350	= 1001,
+  MODEL_XW430_T200	= 1280,
+  MODEL_XW430_T333	= 1270,
+  MODEL_XM540_W150	= 1130,
+  MODEL_XH540_W150	= 1110,
+  MODEL_XH540_V150	= 1150,
+  MODEL_XM540_W270	= 1120,
+  MODEL_XH540_W270	= 1100,
+  MODEL_XH540_V270	= 1140,
+  MODEL_XW540_T140	= 1180,
+  MODEL_XW540_T260	= 1170,
+  // Dynamixel P series
+  MODEL_PH54_200_S500 = 2020,
+  MODEL_PH54_100_S500 = 2010,
+  MODEL_PH42_020_S300 = 2000,
+  MODEL_PM54_060_S250 = 2120,
+  MODEL_PM54_040_S250 = 2110,
+  MODEL_PM42_010_S260 = 2100
+};
+
+enum DynamixelSeries {
+  SERIES_UNKNOWN,
+  SERIES_X,
+  SERIES_P,
+};
+
+inline DynamixelSeries dynamixel_series(uint16_t model_num){ 
+    return (1000 <= model_num && model_num < 2000) ? SERIES_X
+          :(2000 <= model_num && model_num < 3000) ? SERIES_P : SERIES_UNKNOWN; 
+}
 
 enum FactoryResetLevel {
   FACTORY_RESET_EXCLUDE_ID          = 0x01,
@@ -59,20 +111,20 @@ enum DynamixelDataType {
   TYPE_UINT32,
 };
 
-enum DynamixelPhysicalUnit {
+enum DynamixelPhysicalUnit { // これは型番によって変わるので，識別のために使う
   NOUNIT,
   UNIT_POSITION,
+  UNIT_POSITION_OFFSET, // Xシリーズの0点ズレを考慮したもの, 0.0 deg = 2048 pulse
   UNIT_VELOCITY,
   UNIT_ACCELERATION,
   UNIT_CURRENT,
-  UNIT_VOLTAGE,
+  UNIT_VOLTAGE,           // 常に0.1V
   UNIT_TEMPERATURE,
   UNIT_PWM,
-  UNIT_RETURN_DELAY_TIME,
-  UNIT_BUS_WATCHDOG,
-  UNIT_REALTIME_TICK,
+  UNIT_RETURN_DELAY_TIME, //　常に2us
+  UNIT_BUS_WATCHDOG,      // 常に20ms
+  UNIT_REALTIME_TICK,     // 常に1ms
 };
-
 
 class DynamixelAddress {
  public:
@@ -91,12 +143,84 @@ class DynamixelAddress {
   uint16_t address() const { return address_; }
   DynamixelDataType data_type() const { return data_type_; }
   uint16_t size() const { return size_; }
+  DynamixelPhysicalUnit physical_unit() const { return physical_unit_; }
+  int64_t val2pulse(const double val, const uint16_t model_num) const { 
+    assert(dynamixel_series(model_num) != SERIES_UNKNOWN); // 未対応のシリーズの場合はエラー
+    switch (physical_unit_) {
+      case UNIT_POSITION:         return       val /*rad*/  / (2*M_PI) * pos_resolution(model_num);
+      case UNIT_POSITION_OFFSET:  return (M_PI+val)/*rad*/  / (2*M_PI) * pos_resolution(model_num);
+      case UNIT_VELOCITY:         return       val/*rad_s*/ / vel_factor(model_num);
+      case UNIT_ACCELERATION:     return       val/*rad_ss*// acc_factor(model_num);
+      case UNIT_CURRENT:          return       val/*mA*/    / cur_factor(model_num);
+      case UNIT_VOLTAGE:          return       val/*V*/     / 0.1/*V*/;
+      case UNIT_TEMPERATURE:      return       val/*degC*/  / 1.0/*degC*/;
+      case UNIT_PWM:              return       val/*%*/     / 100.0 * pwm_resolution(model_num)/*degC*/;
+      case UNIT_RETURN_DELAY_TIME:return       val/*us*/    / 2.0 /*us*/;
+      case UNIT_BUS_WATCHDOG:     return       val/*ms*/    / 20.0/*ms*/;
+      case UNIT_REALTIME_TICK:    return       val/*ms*/    / 1.0 /*ms*/;
+      default:                    return       val;
+    }
+  }
+  double pulse2val(const int64_t pulse, const uint16_t model_num ) const {
+    assert(dynamixel_series(model_num) != SERIES_UNKNOWN); // 未対応のシリーズの場合はエラー
+    switch (physical_unit_) {
+      case UNIT_POSITION:         return pulse * (2*M_PI) / pos_resolution(model_num)       /*rad*/;
+      case UNIT_POSITION_OFFSET:  return pulse * (2*M_PI) / pos_resolution(model_num) - M_PI/*rad*/;
+      case UNIT_VELOCITY:         return pulse * vel_factor(model_num) /*rad_s*/;
+      case UNIT_ACCELERATION:     return pulse * acc_factor(model_num) /*rad_ss*/;
+      case UNIT_CURRENT:          return pulse * cur_factor(model_num) /*mA*/;
+      case UNIT_VOLTAGE:          return pulse * 0.1 /*V*/;
+      case UNIT_TEMPERATURE:      return pulse * 1.0 /*degC*/;
+      case UNIT_PWM:              return pulse * 100.0 / pwm_resolution(model_num) /*%*/;
+      case UNIT_RETURN_DELAY_TIME:return pulse * 2.0 /*us*/;
+      case UNIT_BUS_WATCHDOG:     return pulse * 20.0/*ms*/;
+      case UNIT_REALTIME_TICK:    return pulse * 1.0 /*ms*/;
+      default:                    return pulse;
+    }
+  }
 
  private:
   uint16_t address_;
   uint8_t size_;
   DynamixelDataType data_type_;
   DynamixelPhysicalUnit physical_unit_;
+  uint32_t pos_resolution(uint16_t model_num) const {
+    switch (model_num) {
+      case MODEL_PH54_200_S500: return 1003846;
+      case MODEL_PH54_100_S500: return 1003846;
+      case MODEL_PH42_020_S300: return 607500;
+      case MODEL_PM54_060_S250: return 502834;
+      case MODEL_PM54_040_S250: return 502834;
+      case MODEL_PM42_010_S260: return 526374;
+      default:                  return 4096; // Xシリーズのデフォルト値
+    }
+  }
+  uint16_t pwm_resolution(uint16_t model_num) const {
+    if (  dynamixel_series(model_num) == SERIES_P ) return 2009;
+    else/*dynamixel_series(model_num) == SERIES_X*/ return 885; // Xシリーズがデフォルト値
+  }
+  double cur_factor(uint16_t model_num) const {
+    if (dynamixel_series(model_num) == SERIES_P) return 1.00;
+    switch (model_num) {
+      case MODEL_XL330_M077:
+      case MODEL_XL330_M288:
+      case MODEL_XC330_M181:
+      case MODEL_XC330_M288:
+      case MODEL_XC330_T181:
+      case MODEL_XC330_T288:    return 1.00;
+      case MODEL_XH430_V210:
+      case MODEL_XH430_V350:    return 1.34;
+      default:                  return 2.69; /*mA*/
+    }
+  }
+  double vel_factor(uint16_t model_num) const {
+    if (  dynamixel_series(model_num) == SERIES_P ) return 0.010/*rev/min*/ / 60.0 * (2*M_PI);
+    else/*dynamixel_series(model_num) == SERIES_X*/ return 0.229/*rev/min*/ / 60.0 * (2*M_PI); // Xシリーズがデフォルト値
+  }
+  double acc_factor(uint16_t model_num) const {
+    if (  dynamixel_series(model_num) == SERIES_P ) return 58000.0/*rev/min^2*// 60.0 / 60.0 * (2*M_PI);
+    else/*dynamixel_series(model_num) == SERIES_X*/ return 214.577/*rev/min^2*// 60.0 / 60.0 * (2*M_PI); // Xシリーズがデフォルト値
+  }
 };
 
 // dynamixel common
@@ -111,7 +235,7 @@ namespace dyn_x {
     inline DynamixelAddress operating_mode        ( 11, TYPE_UINT8 );
     inline DynamixelAddress shadow_id             ( 12, TYPE_UINT8 );
     inline DynamixelAddress homing_offset         ( 20, TYPE_INT32 , UNIT_POSITION);
-    inline DynamixelAddress homing_threshold      ( 24, TYPE_UINT32); 
+    inline DynamixelAddress moving_threshold      ( 24, TYPE_UINT32, UNIT_VELOCITY); 
     inline DynamixelAddress temperature_limit     ( 31, TYPE_UINT8 , UNIT_TEMPERATURE);
     inline DynamixelAddress max_voltage_limit     ( 32, TYPE_UINT16, UNIT_VOLTAGE);
     inline DynamixelAddress min_voltage_limit     ( 34, TYPE_UINT16, UNIT_VOLTAGE);
@@ -119,8 +243,8 @@ namespace dyn_x {
     inline DynamixelAddress current_limit         ( 38, TYPE_UINT16, UNIT_CURRENT);
     inline DynamixelAddress acceleration_limit    ( 40, TYPE_UINT32, UNIT_ACCELERATION);
     inline DynamixelAddress velocity_limit        ( 44, TYPE_UINT32, UNIT_VELOCITY);
-    inline DynamixelAddress max_position_limit    ( 48, TYPE_UINT32, UNIT_POSITION);
-    inline DynamixelAddress min_position_limit    ( 52, TYPE_UINT32, UNIT_POSITION);
+    inline DynamixelAddress max_position_limit    ( 48, TYPE_UINT32, UNIT_POSITION_OFFSET);
+    inline DynamixelAddress min_position_limit    ( 52, TYPE_UINT32, UNIT_POSITION_OFFSET);
     inline DynamixelAddress external_port_mode_1  ( 56, TYPE_UINT8 );
     inline DynamixelAddress external_port_mode_2  ( 57, TYPE_UINT8 );
     inline DynamixelAddress external_port_mode_3  ( 58, TYPE_UINT8 );
@@ -143,16 +267,16 @@ namespace dyn_x {
     inline DynamixelAddress goal_velocity         (104, TYPE_INT32 , UNIT_VELOCITY);
     inline DynamixelAddress profile_acceleration  (108, TYPE_INT32 , UNIT_ACCELERATION);
     inline DynamixelAddress profile_velocity      (112, TYPE_INT32 , UNIT_VELOCITY);
-    inline DynamixelAddress goal_position         (116, TYPE_INT32 , UNIT_POSITION);
+    inline DynamixelAddress goal_position         (116, TYPE_INT32 , UNIT_POSITION_OFFSET);
     inline DynamixelAddress realtime_tick         (120, TYPE_UINT16, UNIT_REALTIME_TICK);
     inline DynamixelAddress moving                (122, TYPE_UINT8 );
     inline DynamixelAddress moving_status         (123, TYPE_UINT8 );
     inline DynamixelAddress present_pwm           (124, TYPE_INT16 , UNIT_PWM);
     inline DynamixelAddress present_current       (126, TYPE_INT16 , UNIT_CURRENT); 
     inline DynamixelAddress present_velocity      (128, TYPE_INT32 , UNIT_VELOCITY);
-    inline DynamixelAddress present_position      (132, TYPE_INT32 , UNIT_POSITION);
-    inline DynamixelAddress velocity_trajectory   (136, TYPE_INT32 );
-    inline DynamixelAddress position_trajectory   (140, TYPE_INT32 );
+    inline DynamixelAddress present_position      (132, TYPE_INT32 , UNIT_POSITION_OFFSET);
+    inline DynamixelAddress velocity_trajectory   (136, TYPE_INT32 , UNIT_VELOCITY);
+    inline DynamixelAddress position_trajectory   (140, TYPE_INT32 , UNIT_POSITION_OFFSET);
     inline DynamixelAddress present_input_voltage (144, TYPE_UINT16, UNIT_VOLTAGE);
     inline DynamixelAddress present_temperture    (146, TYPE_UINT8 , UNIT_TEMPERATURE);
     inline DynamixelAddress external_port_data_1  (152, TYPE_UINT16);
@@ -166,7 +290,7 @@ namespace dyn_p {
     inline DynamixelAddress operating_mode        ( 11, TYPE_UINT8 );
     inline DynamixelAddress shadow_id             ( 12, TYPE_UINT8 );
     inline DynamixelAddress homing_offset         ( 20, TYPE_INT32 , UNIT_POSITION);
-    inline DynamixelAddress homing_threshold      ( 24, TYPE_UINT32);
+    inline DynamixelAddress moving_threshold      ( 24, TYPE_UINT32, UNIT_VELOCITY);
     inline DynamixelAddress temperature_limit     ( 31, TYPE_UINT8 , UNIT_TEMPERATURE);
     inline DynamixelAddress max_voltage_limit     ( 32, TYPE_UINT16, UNIT_VOLTAGE);
     inline DynamixelAddress min_voltage_limit     ( 34, TYPE_UINT16, UNIT_VOLTAGE);
@@ -207,8 +331,8 @@ namespace dyn_p {
     inline DynamixelAddress present_current       (574, TYPE_INT16 , UNIT_CURRENT); 
     inline DynamixelAddress present_velocity      (576, TYPE_INT32 , UNIT_VELOCITY);
     inline DynamixelAddress present_position      (580, TYPE_INT32 , UNIT_POSITION);
-    inline DynamixelAddress velocity_trajectory   (584, TYPE_INT32 );
-    inline DynamixelAddress position_trajectory   (588, TYPE_INT32 );
+    inline DynamixelAddress velocity_trajectory   (584, TYPE_INT32 , UNIT_VELOCITY);
+    inline DynamixelAddress position_trajectory   (588, TYPE_INT32 , UNIT_POSITION);
     inline DynamixelAddress present_input_voltage (592, TYPE_UINT16, UNIT_VOLTAGE);
     inline DynamixelAddress present_temperture    (594, TYPE_UINT8 , UNIT_TEMPERATURE);
     inline DynamixelAddress external_port_data_1  (600, TYPE_UINT16);
@@ -216,7 +340,5 @@ namespace dyn_p {
     inline DynamixelAddress external_port_data_3  (604, TYPE_UINT16);
     inline DynamixelAddress external_port_data_4  (606, TYPE_UINT16);
 }
-
-
 
 #endif /* DYNAMIXEL_PARAMETERS_H_ */
