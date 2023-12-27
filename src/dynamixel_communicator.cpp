@@ -233,19 +233,23 @@ void DynamixelComunicator::Reboot(uint8_t servo_id) {
   port_handler_->clearPort();
   port_handler_->writePort(send_data, 10);
 
-  if (status_return_level_ == 2) {
-    port_handler_->setPacketTimeout( uint16_t(11) );
-    while(port_handler_->getBytesAvailable() < 11) {
-      if (port_handler_->isPacketTimeout()) {
-        printf("Read Error(time out): ID %d, available bytes %d\n", servo_id, port_handler_->getBytesAvailable());
-        error_last_read_ = true;
-        return;
-      }
+  if (status_return_level_ != 2) return;
+
+  port_handler_->setPacketTimeout( uint16_t(11) );
+  while(port_handler_->getBytesAvailable() < 11) {
+    if (port_handler_->isPacketTimeout()) {
+      printf("Read Error(time out): ID %d, available bytes %d\n", servo_id, port_handler_->getBytesAvailable());
+      error_last_read_ = true;
+      return;
     }
-    uint8_t read_data[11];
-    port_handler_->readPort(read_data, 11);
   }
 
+  port_handler_->setPacketTimeout( uint16_t(11) );
+  while(port_handler_->getBytesAvailable() < 11) 
+    if (port_handler_->isPacketTimeout()) return;
+
+  uint8_t read_data[11];
+  port_handler_->readPort(read_data, 11);
 }
 
 /** @fn
