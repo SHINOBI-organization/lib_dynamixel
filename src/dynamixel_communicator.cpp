@@ -686,6 +686,105 @@ map<uint8_t, int64_t> DynamixelComunicator::SyncRead_fast(DynamixelAddress dp, c
 
 
 /** @fn
+ * @brief Dynamixelに情報を書き込む
+ * @param DynamixelAddress dp 対象のパラメータのインスタンス
+ * @param uint8_t servo_id 対象のID
+ * @param int64_t data_int 書き込むデータ．intに変換済みのもの．どの型にも対応できるようにint64_t
+ * @return  bool 通信成功判定
+ */
+bool DynamixelComunicator::Write(const vector<DynamixelAddress>& dp_list_unsorted, uint8_t servo_id, const vector<int64_t>& data_int_list) {
+  // 読み込むデータの範囲を決定, 連続していないとNG
+  vector<DynamixelAddress> dp_list = dp_list_unsorted;
+  sort(dp_list.begin(), dp_list.end(), [](const DynamixelAddress& a, const DynamixelAddress& b) { return a.address() < b.address(); });
+  DynamixelAddress dp_min = *dp_list.begin();
+  DynamixelAddress dp_max = *dp_list.rbegin();
+  // アドレスが連続しているか確認
+  for (int i=0; i<dp_list.size()-1; i++) {
+    if (dp_list[i].address() + dp_list[i].size() != dp_list[i+1].address()) {
+    printf("Write Error(address is not continuous): ID %d\n", servo_id);
+    return false;
+    }
+  }
+  auto size_total_dp = dp_max.address() + dp_max.size() - dp_min.address();
+  if (size_total_dp > 52) {
+    printf("Write Error(data size is too large): ID %d\n", servo_id);
+    printf("  this function only supports up to 52 bytes of data\n");
+    printf("  but %d bytes of data are specified\n", size_total_dp);
+    return false;
+  }
+  uint8_t send_data[12+52] = {0};
+  uint16_t length = size_total_dp+5;
+  send_data[0] = HEADER[0];
+  send_data[1] = HEADER[1];
+  send_data[2] = HEADER[2];
+  send_data[3] = HEADER[3];
+  send_data[4] = servo_id;
+  send_data[5] = length & 0xFF;
+  send_data[6] = (length>>8) & 0xFF;
+  send_data[7] = INSTRUCTION_WRITE;  // instruction
+  send_data[8] = dp_min.address() & 0xFF;
+  send_data[9] = (dp_min.address()>>8) & 0xFF;
+  for (int i=0; i<dp_list.size(); i++) {
+    const DynamixelAddress& dp = dp_list[i];
+    uint8_t index = dp.address() - dp_min.address();
+    EncodeDataWrite(dp.data_type(), data_int_list[i]);
+    for(int i=0; i<dp.size(); i++) {
+      send_data[10+index+i] = data_write_[i];
+    }
+  }
+  uint16_t sum = CalcChecksum(send_data, 10+size_total_dp);
+  send_data[10+size_total_dp] = sum & 0xFF;
+  send_data[11+size_total_dp] = (sum>>8) & 0xFF;
+  printf("send_data: (size %d)\n  ", size_total_dp);
+  for ( int i=0; i<12+size_total_dp; i++ ) printf("%02X ", send_data[i]); printf("\n");
+
+  port_handler_->clearPort();
+  port_handler_->writePort(send_data, 12+size_total_dp);
+
+  if (status_return_level_ != 2) return true;
+  // 以降はwriteと同じ
+
+  port_handler_->setPacketTimeout( uint16_t(11) );
+  while(port_handler_->getBytesAvailable() < 11) {
+    if (port_handler_->isPacketTimeout()) {
+      printf("Write Error(return status time out): ID %d, available bytes %d/11\n", servo_id, port_handler_->getBytesAvailable());
+      error_last_read_ = true;
+      return false;
+    }
+  }
+  uint8_t read_data[11];
+  uint8_t read_length = port_handler_->readPort(read_data, 11);
+  if (read_data[0] != HEADER[0] or
+      read_data[1] != HEADER[1] or
+      read_data[2] != HEADER[2] or
+      read_data[3] != HEADER[3] or
+      read_data[4] != servo_id) {
+    printf("Write Error(return status header): ID %d\n", servo_id);
+    error_last_read_ = true;
+    return false;
+  }
+  uint16_t sum_est = CalcChecksum(read_data, 9);
+  uint16_t sum_read = uint16_t(read_data[9]) | uint16_t(read_data[9+1])<<8;
+  if (sum_est != sum_read) {
+    printf("Write Error(crc): ID %d, est:%d, read:%d\n", servo_id, sum_est, sum_read);
+    error_last_read_ = true;
+    return false;
+  }
+   // 正常なデータ
+  uint8_t error = (uint8_t)read_data[8]; // error
+  if ( error & 0x80 ) { // error の最上位ビットが1のとき，ハードウェアエラーが発生している
+    // printf("Write Warn(detected hardware error) : id [%d]\n", (int)servo_id); // うるさいので消す．
+  }
+  if ( error & 0x7F ) { // error の最上位ビット以外が1のとき，通信状態の異常がある
+    printf("Write Error(return status packet error) : id [%d]\n", (int)servo_id);
+	error_last_read_ = true;
+    return false;
+  }
+  return true;
+}
+
+
+/** @fn
  * @brief Dynamixelから複数の情報を同時に読み込む
  * @param uint8_t servo_id 対象のID
  * @param vector<DynamixelAddress> dp_list 対象のパラメータのインスタンスの配列
@@ -693,12 +792,10 @@ map<uint8_t, int64_t> DynamixelComunicator::SyncRead_fast(DynamixelAddress dp, c
  */
 vector<int64_t> DynamixelComunicator::Read(const vector<DynamixelAddress>& dp_list, uint8_t servo_id) {
     // 読み込むデータの範囲を決定, 連続していなくても許容
-    DynamixelAddress dp_min = dp_list[0];
-    DynamixelAddress dp_max = dp_list[0];
-    for ( auto dp : dp_list ) {
-        dp_min = dp_min.address() < dp.address() ? dp_min : dp;
-        dp_max = dp_max.address() > dp.address() ? dp_max : dp;
-    }
+    vector<DynamixelAddress> dp_list_sorted = dp_list;
+    sort(dp_list_sorted.begin(), dp_list_sorted.end(), [](const DynamixelAddress& a, const DynamixelAddress& b) { return a.address() < b.address(); });
+    DynamixelAddress dp_min = *dp_list_sorted.begin();
+    DynamixelAddress dp_max = *dp_list_sorted.rbegin();
     auto size_total_dp = dp_max.address() + dp_max.size() - dp_min.address();
 
     // instruction packetを作成

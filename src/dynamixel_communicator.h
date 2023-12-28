@@ -8,6 +8,7 @@ using std::vector;
 #include <string>
 using std::string;
 #include <cmath>
+#include <algorithm>
 
 #include "../download/port_handler.h"
 #include "dynamixel_parameters.h"
@@ -61,7 +62,7 @@ class DynamixelComunicator {
   map<uint8_t, int64_t> SyncRead     (DynamixelAddress dp, const vector<uint8_t>& servo_id_list);
   map<uint8_t, int64_t> SyncRead_fast(DynamixelAddress dp, const vector<uint8_t>& servo_id_list);
   // 複数パラメータ同時
-//   bool Write        (const vector<DynamixelAddress>& dp_list, uint8_t                servo_id,      const vector<int64_t>&               data_int_list);
+  bool Write        (const vector<DynamixelAddress>& dp_list, uint8_t                servo_id,      const vector<int64_t>&               data_int_list);
 //   bool SyncWrite    (const vector<DynamixelAddress>& dp_list, const vector<uint8_t>& servo_id_list, const vector<vector<int64_t>>&       data_int_list);
 //   bool SyncWrite    (const vector<DynamixelAddress>& dp_list, const map<uint8_t, vector<int64_t>>& id_data_int_map);
   vector<int64_t>               Read         (const vector<DynamixelAddress>& dp_list, uint8_t                servo_id     );
