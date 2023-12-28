@@ -704,15 +704,13 @@ map<uint8_t, int64_t> DynamixelComunicator::SyncRead_fast(DynamixelAddress dp, c
  * @param vector<int64_t> data_int_list 書き込むデータのリスト．intに変換済みのもの．どの型にも対応できるようにint64_t
  * @return  bool 通信成功判定
  */
-bool DynamixelComunicator::Write(const vector<DynamixelAddress>& dp_list_unsorted, uint8_t servo_id, const vector<int64_t>& data_int_list) {
-  // 読み込むデータの範囲を決定, 連続していないとNG
-  vector<DynamixelAddress> dp_list = dp_list_unsorted;
-  sort(dp_list.begin(), dp_list.end(), [](const DynamixelAddress& a, const DynamixelAddress& b) { return a.address() < b.address(); });
-  DynamixelAddress dp_min = *dp_list.begin();
-  DynamixelAddress dp_max = *dp_list.rbegin();
+bool DynamixelComunicator::Write(const vector<DynamixelAddress>& dp_list_sorted, uint8_t servo_id, const vector<int64_t>& data_int_list) {
+  // 書き込むデータの範囲を決定, ソート済みかつ連続していないとNG
+  DynamixelAddress dp_min = *dp_list_sorted.begin();
+  DynamixelAddress dp_max = *dp_list_sorted.rbegin();
   // アドレスが連続しているか確認
-  for (int i=0; i<dp_list.size()-1; i++) {
-    if (dp_list[i].address() + dp_list[i].size() != dp_list[i+1].address()) {
+  for (int i=0; i<dp_list_sorted.size()-1; i++) {
+    if (dp_list_sorted[i].address() + dp_list_sorted[i].size() != dp_list_sorted[i+1].address()) {
     printf("Write Error(address is not continuous): ID %d\n", servo_id);
     return false;
     }
@@ -736,8 +734,8 @@ bool DynamixelComunicator::Write(const vector<DynamixelAddress>& dp_list_unsorte
   send_data[7] = INSTRUCTION_WRITE;  // instruction
   send_data[8] = dp_min.address() & 0xFF;
   send_data[9] = (dp_min.address()>>8) & 0xFF;
-  for (int i=0; i<dp_list.size(); i++) {
-    const DynamixelAddress& dp = dp_list[i];
+  for (int i=0; i<dp_list_sorted.size(); i++) {
+    const DynamixelAddress& dp = dp_list_sorted[i];
     uint8_t index = dp.address() - dp_min.address();
     EncodeDataWrite(dp.data_type(), data_int_list[i]);
     for(int i=0; i<dp.size(); i++) {
@@ -747,8 +745,6 @@ bool DynamixelComunicator::Write(const vector<DynamixelAddress>& dp_list_unsorte
   uint16_t sum = CalcChecksum(send_data, 10+size_total_dp);
   send_data[10+size_total_dp] = sum & 0xFF;
   send_data[11+size_total_dp] = (sum>>8) & 0xFF;
-  printf("send_data: (size %d)\n  ", size_total_dp);
-  for ( int i=0; i<12+size_total_dp; i++ ) printf("%02X ", send_data[i]); printf("\n");
 
   port_handler_->clearPort();
   port_handler_->writePort(send_data, 12+size_total_dp);
@@ -1117,4 +1113,87 @@ map<uint8_t, vector<int64_t>> DynamixelComunicator::SyncRead_fast(const vector<D
 	}
 
 	return id_data_vec_map;
+}
+
+/** @fn
+ * @brief 複数のDynamixelの同一のアドレスに情報を書き込む
+ * @param vector<DynamixelAddress> dp_list 対象のパラメータのインスタンスの配列
+ * @param vector<uint8_t> servo_id_list 書き込むサーボのIDのリスト
+ * @param vector<vector<int64_t>> data_vec_list 書き込むデータのリスト．intに変換済みのもの．どの型にも対応できるようにint64_t
+ * @return bool 通信成功判定
+ */
+bool DynamixelComunicator::SyncWrite(const vector<DynamixelAddress>& dp_list_sorted, const vector<uint8_t>& servo_id_list, const vector<vector<int64_t>>& data_vec_list) {
+  // 書き込むデータの範囲を決定, ソート済みかつ連続していないとNG
+  DynamixelAddress dp_min = *dp_list_sorted.begin();
+  DynamixelAddress dp_max = *dp_list_sorted.rbegin();
+  // アドレスが連続しているか確認
+  for (int i=0; i<dp_list_sorted.size()-1; i++) {
+    if (dp_list_sorted[i].address() + dp_list_sorted[i].size() != dp_list_sorted[i+1].address()) {
+    printf("Sync Write Error(address is not continuous): ID ");
+    for (int i=0; i<servo_id_list.size(); i++) printf("%d ", servo_id_list[i]); printf("\n");
+    return false;
+    }
+  }
+  auto size_total_dp = dp_max.address() + dp_max.size() - dp_min.address();
+  if (size_total_dp*servo_id_list.size() > 1010) {
+    printf("Sync Write Error(data size is too large): ID ");
+    for (int i=0; i<servo_id_list.size(); i++) printf("%d ", servo_id_list[i]); printf("\n");
+    printf("  this function only supports up to 1010 bytes of data\n");
+    printf("  but %lu bytes of data are specified\n", size_total_dp*servo_id_list.size());
+    return false;
+  }
+  uint8_t send_data[14 + 1010] = {0};
+  int8_t num_servo = servo_id_list.size();
+  uint16_t length = (1+size_total_dp)*num_servo+7;
+  send_data[0] = HEADER[0];
+  send_data[1] = HEADER[1];
+  send_data[2] = HEADER[2];
+  send_data[3] = HEADER[3];
+  send_data[4] = 0xFE;  // id
+  send_data[5] = length & 0xFF;
+  send_data[6] = (length>>8) & 0xFF;
+  send_data[7] = INSTRUCTION_SYNC_WRITE;  // instruction
+  send_data[8] = dp_min.address() & 0xFF;
+  send_data[9] = (dp_min.address()>>8) & 0xFF;
+  send_data[10] = size_total_dp & 0xFF;
+  send_data[11] = (size_total_dp>>8) & 0xFF;
+  for(int i_servo=0; i_servo<num_servo; i_servo++) {
+    send_data[12+i_servo*(size_total_dp+1)] = servo_id_list[i_servo];
+    for (int i_dp=0; i_dp<dp_list_sorted.size(); i_dp++) {
+      const DynamixelAddress& dp = dp_list_sorted[i_dp];
+      uint8_t index = dp.address() - dp_min.address();
+      EncodeDataWrite(dp.data_type(), data_vec_list[i_servo][i_dp]);
+      for(int i_data=0; i_data<dp.size(); i_data++) {
+        send_data[12+i_servo*(size_total_dp+1)+1+index+i_data] = data_write_[i_data];
+      }
+    }
+  }
+
+  uint16_t sum = CalcChecksum(send_data, 12+num_servo*(size_total_dp+1));
+  send_data[12+num_servo*(size_total_dp+1)] = sum & 0xFF;
+  send_data[13+num_servo*(size_total_dp+1)] = (sum>>8) & 0xFF;
+
+  port_handler_->clearPort();
+  port_handler_->writePort(send_data, 14+num_servo*(size_total_dp+1));
+  return true;
+}
+
+/** @fn
+ * @brief 複数のDynamixelの同一のアドレスに情報書き込む
+ * @param DynamixelAddress dp 対象のパラメータのインスタンス
+ * @param map<uint8_t, int64_t> id_data_int_map 書き込むサーボのIDと書き込むデータのマップ
+ * @return  bool 通信成功判定
+ */
+bool DynamixelComunicator::SyncWrite(const vector<DynamixelAddress>& dp_list, const map<uint8_t, vector<int64_t>>& id_data_int_map) {
+    vector<uint8_t>         servo_id_list; servo_id_list.reserve(id_data_int_map.size());
+    vector<vector<int64_t>> data_vec_list; data_vec_list.reserve(id_data_int_map.size());
+    for (const auto& id_data : id_data_int_map) {
+        servo_id_list.push_back(id_data.first);    // キー（サーボID）を追加
+        if ( dp_list.size()!= id_data.second.size() ){
+            printf("Sync Write Error(data size is not match): ID %d\n", id_data.first);
+            return false;
+        }
+        data_vec_list.push_back(id_data.second);   // 値（データ）を追加
+    }
+    return SyncWrite( dp_list, servo_id_list, data_vec_list );
 }
