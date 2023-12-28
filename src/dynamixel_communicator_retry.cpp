@@ -43,7 +43,7 @@ int64_t DynamixelComunicator::tryRead(DynamixelAddress dp, uint8_t servo_id) {
     int64_t data_int = 0;
     for (int i=0; i<num_try_; i++) {
         data_int = Read(dp, servo_id);
-        if ( !error_last_read_ ) return data_int;
+        if ( !comm_error_last_read_ && !timeout_last_read_ ) return data_int;
         sleep_for(1ms*msec_interval_);
     }
     return data_int;
@@ -74,7 +74,7 @@ vector<int64_t> DynamixelComunicator::tryRead(const vector<DynamixelAddress>& dp
     vector<int64_t> data_int_list(dp_list.size());
     for (int i=0; i<num_try_; i++) {
         data_int_list = Read(dp_list, servo_id);
-        if ( !error_last_read_ ) return data_int_list;
+        if ( !comm_error_last_read_ && !timeout_last_read_ ) return data_int_list;
         sleep_for(1ms*msec_interval_);
     }
     return data_int_list;

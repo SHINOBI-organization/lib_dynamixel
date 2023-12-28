@@ -16,17 +16,10 @@ using std::string;
 
 class DynamixelComunicator {
  public:
-  DynamixelComunicator() {
-    status_return_level_ = 2;
-    num_try_ = 5;
-    msec_interval_ = 5;
-  }
+  DynamixelComunicator() {  }
   DynamixelComunicator(const char *port_name, int baudrate) {
     GetPortHandler(port_name);
     set_baudrate(baudrate);
-    status_return_level_ = 2;
-    num_try_ = 5;
-    msec_interval_ = 5;
   }
 
   void GetPortHandler(const char *port_name) {
@@ -40,7 +33,9 @@ class DynamixelComunicator {
 
   string port_name(){ return string(port_name_); }
 
-  bool error_last_read(){ return error_last_read_; }
+  bool timeout_last_read(){ return timeout_last_read_; }
+  bool comm_error_last_read(){ return comm_error_last_read_; }
+  bool hardware_error_last_read(){ return hardware_error_last_read_; }
 
   void set_retry_config(int num_try, int msec_interval){
     num_try_ = std::max(num_try, 1);
@@ -82,14 +77,17 @@ class DynamixelComunicator {
   const char *port_name_;
   PortHandler *port_handler_;
   uint32_t baudrate_;
-  uint8_t status_return_level_;
-  double time_per_byte_;
+  uint8_t status_return_level_ = 2;
   uint8_t  data_write_[4];
   uint8_t  data_read_[4];
-  bool error_last_read_;
 
-  uint8_t num_try_;
-  uint8_t msec_interval_;
+  bool timeout_last_read_        = false; // 直前の通信でタイムアウトが発生したことを示すフラグ
+  bool comm_error_last_read_     = false; // 直前の通信に何らかの異常が発生したことを示すフラグ
+  bool hardware_error_last_read_ = false; // ハードウェアエラーの有無を示すフラグ status packetのerror部分から取得する
+  
+  bool varbose_ = false;
+  uint8_t num_try_       = 5;
+  uint8_t msec_interval_ = 5;
 };
 
 #endif /* DYNAMIXEL_COMMUNICATOR_H_ */
