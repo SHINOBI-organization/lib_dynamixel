@@ -50,9 +50,24 @@ int64_t DynamixelComunicator::tryRead(DynamixelAddress dp, uint8_t servo_id) {
 }
 
 /** @fn
- * @brief Dynamixelから複数の情報を同時に読み込む
- * @param uint8_t servo_id 対象のID
+ * @brief Dynamixelに情報を書き込む
  * @param vector<DynamixelAddress> dp_list 対象のパラメータのインスタンスの配列
+ * @param uint8_t servo_id 対象のID
+ * @param vector<int64_t> data_int_list 書き込むデータの配列．intに変換済みのもの．どの型にも対応できるようにint64_t
+ * @return  bool 通信成功判定
+ */
+bool DynamixelComunicator::tryWrite(const vector<DynamixelAddress>& dp_list, uint8_t servo_id, const vector<int64_t>& data_int_list) {
+  for (int i=0; i<num_try_; i++) {
+    if ( Write(dp_list, servo_id, data_int_list) ) return true;
+    sleep_for(1ms*msec_interval_);
+  }
+  return false;
+}
+
+/** @fn
+ * @brief Dynamixelから複数の情報を同時に読み込む
+ * @param vector<DynamixelAddress> dp_list 対象のパラメータのインスタンスの配列
+ * @param uint8_t servo_id 対象のID
  * @return vector<int64_t> 読み込んだデータを格納する配列．intに変換済みのもの．
  */
 vector<int64_t> DynamixelComunicator::tryRead(const vector<DynamixelAddress>& dp_list, uint8_t servo_id) {

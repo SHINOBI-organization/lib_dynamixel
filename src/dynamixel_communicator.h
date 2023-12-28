@@ -52,27 +52,27 @@ class DynamixelComunicator {
   void Reboot(uint8_t servo_id);
   void FactoryReset(uint8_t servo_id, FactoryResetLevel level);
   bool Ping(uint8_t servo_id);
-  bool tryPing(uint8_t servo_id);
 
   // パラメータ1つ
-  bool Write        (DynamixelAddress dp, uint8_t                servo_id,      int64_t                data_int     );
-  bool SyncWrite    (DynamixelAddress dp, const vector<uint8_t>& servo_id_list, const vector<int64_t>& data_int_list);
-  bool SyncWrite    (DynamixelAddress dp, const map<uint8_t, int64_t>& id_data_int_map);
+  bool Write    (DynamixelAddress dp, uint8_t                servo_id,      int64_t                data_int     );
+  bool SyncWrite(DynamixelAddress dp, const vector<uint8_t>& servo_id_list, const vector<int64_t>& data_int_list);
+  bool SyncWrite(DynamixelAddress dp, const map<uint8_t, int64_t>& id_data_int_map);
   int64_t               Read         (DynamixelAddress dp, uint8_t                servo_id     );
   map<uint8_t, int64_t> SyncRead     (DynamixelAddress dp, const vector<uint8_t>& servo_id_list);
   map<uint8_t, int64_t> SyncRead_fast(DynamixelAddress dp, const vector<uint8_t>& servo_id_list);
   // 複数パラメータ同時
-  bool Write        (const vector<DynamixelAddress>& dp_list, uint8_t                servo_id,      const vector<int64_t>&               data_int_list);
-//   bool SyncWrite    (const vector<DynamixelAddress>& dp_list, const vector<uint8_t>& servo_id_list, const vector<vector<int64_t>>&       data_int_list);
-//   bool SyncWrite    (const vector<DynamixelAddress>& dp_list, const map<uint8_t, vector<int64_t>>& id_data_int_map);
+  bool Write    (const vector<DynamixelAddress>& dp_list, uint8_t                servo_id,      const vector<int64_t>&               data_int_list);
+//   bool SyncWrite(const vector<DynamixelAddress>& dp_list, const vector<uint8_t>& servo_id_list, const vector<vector<int64_t>>&       data_int_list);
+//   bool SyncWrite(const vector<DynamixelAddress>& dp_list, const map<uint8_t, vector<int64_t>>& id_data_int_map);
   vector<int64_t>               Read         (const vector<DynamixelAddress>& dp_list, uint8_t                servo_id     );
 //   map<uint8_t, vector<int64_t>> SyncRead     (const vector<DynamixelAddress>& dp_list, const vector<uint8_t>& servo_id_list);
 //   map<uint8_t, vector<int64_t>> SyncRead_fast(const vector<DynamixelAddress>& dp_list, const vector<uint8_t>& servo_id_list);
-
-  bool             tryWrite (DynamixelAddress dp,                     uint8_t servo_id, int64_t                data_int     );
-  int64_t          tryRead  (DynamixelAddress dp,                     uint8_t servo_id );
-//   bool             tryWrite (const vector<DynamixelAddress>& dp_list, uint8_t servo_id, const vector<int64_t>& data_int_list);
-  vector<int64_t>  tryRead  (const vector<DynamixelAddress>& dp_list, uint8_t servo_id );
+  // Retry付
+  bool            tryPing (uint8_t servo_id);
+  bool            tryWrite(DynamixelAddress dp,                     uint8_t servo_id, int64_t                data_int     );
+  int64_t         tryRead (DynamixelAddress dp,                     uint8_t servo_id );
+  bool            tryWrite(const vector<DynamixelAddress>& dp_list, uint8_t servo_id, const vector<int64_t>& data_int_list);
+  vector<int64_t> tryRead (const vector<DynamixelAddress>& dp_list, uint8_t servo_id );
   
  private:
   uint16_t CalcChecksum(uint8_t data[], uint8_t length);

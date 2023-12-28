@@ -687,9 +687,9 @@ map<uint8_t, int64_t> DynamixelComunicator::SyncRead_fast(DynamixelAddress dp, c
 
 /** @fn
  * @brief Dynamixelに情報を書き込む
- * @param DynamixelAddress dp 対象のパラメータのインスタンス
+ * @param vector<DynamixelAddress> dp_list_unsorted 対象のパラメータのインスタンスのリスト
  * @param uint8_t servo_id 対象のID
- * @param int64_t data_int 書き込むデータ．intに変換済みのもの．どの型にも対応できるようにint64_t
+ * @param vector<int64_t> data_int_list 書き込むデータのリスト．intに変換済みのもの．どの型にも対応できるようにint64_t
  * @return  bool 通信成功判定
  */
 bool DynamixelComunicator::Write(const vector<DynamixelAddress>& dp_list_unsorted, uint8_t servo_id, const vector<int64_t>& data_int_list) {
