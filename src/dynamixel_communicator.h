@@ -65,7 +65,7 @@ class DynamixelComunicator {
 //   bool SyncWrite(const vector<DynamixelAddress>& dp_list, const vector<uint8_t>& servo_id_list, const vector<vector<int64_t>>&       data_int_list);
 //   bool SyncWrite(const vector<DynamixelAddress>& dp_list, const map<uint8_t, vector<int64_t>>& id_data_int_map);
   vector<int64_t>               Read         (const vector<DynamixelAddress>& dp_list, uint8_t                servo_id     );
-//   map<uint8_t, vector<int64_t>> SyncRead     (const vector<DynamixelAddress>& dp_list, const vector<uint8_t>& servo_id_list);
+  map<uint8_t, vector<int64_t>> SyncRead     (const vector<DynamixelAddress>& dp_list, const vector<uint8_t>& servo_id_list);
 //   map<uint8_t, vector<int64_t>> SyncRead_fast(const vector<DynamixelAddress>& dp_list, const vector<uint8_t>& servo_id_list);
   // Retry付
   bool            tryPing (uint8_t servo_id);
@@ -76,7 +76,7 @@ class DynamixelComunicator {
   
  private:
   uint16_t CalcChecksum(uint8_t data[], uint8_t length);
-  void EncodeDataWrite(DynamixelDataType type, int64_t data_int);
+  void   EncodeDataWrite(DynamixelDataType type, int64_t data_int);
   int64_t DecodeDataRead(DynamixelDataType type);
 
   const char *port_name_;
