@@ -905,9 +905,9 @@ vector<int64_t> DynamixelComunicator::Read(const vector<DynamixelAddress>& dp_li
 
 /** @fn
  * @brief 複数のDynamixelの同一のアドレスから情報を読み込む
- * @param DynamixelAddress dp 対象のパラメータのインスタンス
+ * @param vector<DynamixelAddress> dp_list 対象のパラメータのインスタンスの配列
  * @param vector<uint8_t> servo_id_list 読み込むサーボのIDのリスト
- * @return map<uint8_t, int64_t> 読み込んだサーボのIDとデータのマップ
+ * @return map<uint8_t, vector<int64_t>> 読み込んだサーボのIDとデータのマップ
  */
 map<uint8_t, vector<int64_t>> DynamixelComunicator::SyncRead(const vector<DynamixelAddress>& dp_list, const vector<uint8_t>& servo_id_list) {
   // 読み込むデータの範囲を決定, 連続していなくても許容
@@ -1010,4 +1010,111 @@ map<uint8_t, vector<int64_t>> DynamixelComunicator::SyncRead(const vector<Dynami
     }
   }
   return id_data_vec_map;
+}
+
+/** @fn
+ * @brief 複数のDynamixelの同一のアドレスから情報を読み込む,パケットを最小限にすることで高速化したもの．サーボ1つでも失敗するとすべて読み込めない
+ * @param vector<DynamixelAddress> dp_list 対象のパラメータのインスタンスの配列
+ * @param vector<uint8_t> servo_id_list 読み込むサーボのIDのリスト
+ * @return map<uint8_t, vector<int64_t>> 読み込んだサーボのIDとデータのマップ
+ */
+map<uint8_t, vector<int64_t>> DynamixelComunicator::SyncRead_fast(const vector<DynamixelAddress>& dp_list, const vector<uint8_t>& servo_id_list) {
+    // 読み込むデータの範囲を決定, 連続していなくても許容
+    vector<DynamixelAddress> dp_list_sorted = dp_list;
+    sort(dp_list_sorted.begin(), dp_list_sorted.end(), [](const DynamixelAddress& a, const DynamixelAddress& b) { return a.address() < b.address(); });
+    DynamixelAddress dp_min = *dp_list_sorted.begin();
+    DynamixelAddress dp_max = *dp_list_sorted.rbegin();
+    auto size_total_dp = dp_max.address() + dp_max.size() - dp_min.address();
+
+	uint8_t num_servo = servo_id_list.size();
+	uint8_t send_data[128] = {0};
+	uint16_t length = num_servo+7;
+	send_data[0] = HEADER[0];
+	send_data[1] = HEADER[1];
+	send_data[2] = HEADER[2];
+	send_data[3] = HEADER[3];
+	send_data[4] = 0xFE;  // id
+	send_data[5] = length & 0xFF;
+	send_data[6] = (length>>8) & 0xFF;
+	send_data[7] = INSTRUCTION_FAST_SYNC_READ;  // instruction
+	send_data[8] = dp_min.address() & 0xFF;
+	send_data[9] = (dp_min.address()>>8) & 0xFF;
+	send_data[10] = size_total_dp & 0xFF;
+	send_data[11] = (size_total_dp>>8) & 0xFF;
+	for(int i_servo=0; i_servo<num_servo; i_servo++) {
+		send_data[12+i_servo] = servo_id_list[i_servo];
+	}
+	uint16_t sum = CalcChecksum(send_data, 12+num_servo);
+	send_data[12+num_servo] = sum & 0xFF;
+	send_data[13+num_servo] = (sum>>8) & 0xFF;
+
+	port_handler_->clearPort();
+	port_handler_->writePort(send_data, 14+num_servo);
+
+    // データ読み込みの処理
+    error_last_read_ = false;
+    map<uint8_t, vector<int64_t>> id_data_vec_map;
+
+	uint8_t read_data[1023];
+	uint8_t length_a_servo = 4+size_total_dp;
+	uint16_t length_read_data = 8+length_a_servo*num_servo;
+	port_handler_->setPacketTimeout( uint16_t(length_read_data) );
+	while(port_handler_->getBytesAvailable() < length_read_data) {
+		if (port_handler_->isPacketTimeout()) {
+		printf("Fast Sync Read Error(time out) : available bytes %d / %d\n", port_handler_->getBytesAvailable(), length_read_data);
+		error_last_read_ = true;
+		return id_data_vec_map;
+		}
+	}
+
+	// パケットの読み込み
+	if (port_handler_->readPort(read_data, length_read_data) == -1) {
+		printf("Fast Sync Read Error(read port)\n");
+		error_last_read_ = true;
+		return id_data_vec_map;
+	}
+	// 読み込めたパケットのヘッダーの確認
+	if (read_data[0] != HEADER[0] ||
+		 read_data[1] != HEADER[1] ||
+		 read_data[2] != HEADER[2] ||
+		 read_data[3] != HEADER[3]) {
+		printf("Fast Sync Read Error(header)\n");
+		error_last_read_ = true;
+		return id_data_vec_map;
+	}
+	// 読み込めたパケットのIDがブロードキャスト用のものか確認
+	if ( read_data[4] != 0xFE ) {
+		printf("Fast Sync Read Error(broad cast id)\n");
+		error_last_read_ = true;
+		return id_data_vec_map;
+	}
+
+	// 読み込めたパケットを個々のサーボのパケットに分割して処理,チェックサムの処理は行わない
+	for(int i_servo=0; i_servo<num_servo; i_servo++) {
+		uint8_t id = (uint8_t)read_data[9 + i_servo*length_a_servo]; // servo id
+			if ( id != servo_id_list[i_servo] ) {
+				printf("Fast Sync Read Error(packet id) : id [%d]\n", servo_id_list[i_servo]);
+				error_last_read_ = true;
+				break;
+			}
+		uint8_t error = (uint8_t)read_data[8 + i_servo*length_a_servo]; // error
+            if ( error & 0x80 ) { // error の最上位ビットが1のとき，ハードウェアエラーが発生している
+				// printf("Fast Sync Read Warn(detected hardware error) : id [%d]\n", id); // うるさいので消す．
+            }
+            if ( error & 0x7F ) { // error の最上位ビット以外が1のとき，通信状態の異常がある
+				printf("Fast Sync Read Error(packet error) : id [%d]\n", id);
+				error_last_read_ = true;
+                break;
+			}
+		// 読み込めたパケットを意味あるデータに変換
+        id_data_vec_map[id].resize(dp_list.size());
+        for (int i_dp=0; i_dp<dp_list.size(); i_dp++) {
+            const DynamixelAddress& dp = dp_list[i_dp];
+            uint8_t index = dp.address() - dp_min.address();
+            for(int i=0; i<dp.size(); i++) data_read_[i] = read_data[9+index+i];
+            id_data_vec_map[id][i_dp] = DecodeDataRead(dp.data_type());
+        }
+	}
+
+	return id_data_vec_map;
 }

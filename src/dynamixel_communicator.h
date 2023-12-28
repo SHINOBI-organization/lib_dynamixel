@@ -66,7 +66,7 @@ class DynamixelComunicator {
 //   bool SyncWrite(const vector<DynamixelAddress>& dp_list, const map<uint8_t, vector<int64_t>>& id_data_int_map);
   vector<int64_t>               Read         (const vector<DynamixelAddress>& dp_list, uint8_t                servo_id     );
   map<uint8_t, vector<int64_t>> SyncRead     (const vector<DynamixelAddress>& dp_list, const vector<uint8_t>& servo_id_list);
-//   map<uint8_t, vector<int64_t>> SyncRead_fast(const vector<DynamixelAddress>& dp_list, const vector<uint8_t>& servo_id_list);
+  map<uint8_t, vector<int64_t>> SyncRead_fast(const vector<DynamixelAddress>& dp_list, const vector<uint8_t>& servo_id_list);
   // Retry付
   bool            tryPing (uint8_t servo_id);
   bool            tryWrite(DynamixelAddress dp,                     uint8_t servo_id, int64_t                data_int     );
