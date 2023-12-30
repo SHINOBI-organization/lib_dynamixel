@@ -46,3 +46,6 @@ cat /sys/bus/usb-serial/devices/ttyUSB0/latency_timer
 echo 4 | sudo tee /sys/bus/usb-serial/devices/ttyUSB0/latency_timer
 cat /sys/bus/usb-serial/devices/ttyUSB0/latency_timer
 ```
+
+### メモ
+本体 2, このライブラリ 4くらいがちょうどいいかもしれない．
