@@ -72,7 +72,7 @@ enum DynamixelBaudrateIndex {
   BAUDRATE_INDEX_10M5   = 8,
 };
 enum DynamixelOperatingMode {
-  OPERATING_MODE_TORQUE                = 0,
+  OPERATING_MODE_CURRENT               = 0,
   OPERATING_MODE_VELOCITY              = 1,
   OPERATING_MODE_POSITION              = 3,
   OPERATING_MODE_EXTENDED_POSITION     = 4,
@@ -228,12 +228,12 @@ inline DynamixelAddress model_number          (  0, TYPE_UINT16);
 inline DynamixelAddress id                    (  7, TYPE_UINT8 );
 inline DynamixelAddress baudrate              (  8, TYPE_UINT8 );
 inline DynamixelAddress return_delay_time     (  9, TYPE_UINT8 , UNIT_RETURN_DELAY_TIME);
+inline DynamixelAddress drive_mode            ( 10, TYPE_UINT8 );
+inline DynamixelAddress operating_mode        ( 11, TYPE_UINT8 );
+inline DynamixelAddress shadow_id             ( 12, TYPE_UINT8 );
 
 // dynamixel X series   
 namespace dyn_x {
-    inline DynamixelAddress drive_mode            ( 10, TYPE_UINT8 );
-    inline DynamixelAddress operating_mode        ( 11, TYPE_UINT8 );
-    inline DynamixelAddress shadow_id             ( 12, TYPE_UINT8 );
     inline DynamixelAddress homing_offset         ( 20, TYPE_INT32 , UNIT_POSITION);
     inline DynamixelAddress moving_threshold      ( 24, TYPE_UINT32, UNIT_VELOCITY); 
     inline DynamixelAddress temperature_limit     ( 31, TYPE_UINT8 , UNIT_TEMPERATURE);
@@ -286,9 +286,7 @@ namespace dyn_x {
 
 // dynamixel P series (old: pro plus)
 namespace dyn_p {
-    inline DynamixelAddress drive_mode            ( 10, TYPE_UINT8 );
-    inline DynamixelAddress operating_mode        ( 11, TYPE_UINT8 );
-    inline DynamixelAddress shadow_id             ( 12, TYPE_UINT8 );
+
     inline DynamixelAddress homing_offset         ( 20, TYPE_INT32 , UNIT_POSITION);
     inline DynamixelAddress moving_threshold      ( 24, TYPE_UINT32, UNIT_VELOCITY);
     inline DynamixelAddress temperature_limit     ( 31, TYPE_UINT8 , UNIT_TEMPERATURE);
