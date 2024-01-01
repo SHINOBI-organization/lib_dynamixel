@@ -239,15 +239,11 @@ void DynamixelComunicator::Reboot(uint8_t servo_id) {
   port_handler_->setPacketTimeout( uint16_t(11) );
   while(port_handler_->getBytesAvailable() < 11) {
     if (port_handler_->isPacketTimeout()) {
-      if(varbose_) printf("Read Error(time out): ID %d, available bytes %d\n", servo_id, port_handler_->getBytesAvailable());
+      if(varbose_) printf("Reboot Error(time out): ID %d, available bytes %d\n", servo_id, port_handler_->getBytesAvailable());
       timeout_last_read_ = true;
       return;
     }
   }
-
-  port_handler_->setPacketTimeout( uint16_t(11) );
-  while(port_handler_->getBytesAvailable() < 11) 
-    if (port_handler_->isPacketTimeout()) return;
 
   uint8_t read_data[11];
   port_handler_->readPort(read_data, 11);
@@ -570,9 +566,9 @@ map<uint8_t, int64_t> DynamixelComunicator::SyncRead( DynamixelAddress dp, const
     map<uint8_t, int64_t> id_data_int_map;
     hardware_error_last_read_ = false;
     comm_error_last_read_ = false;
-    timeout_last_read_ = false;
-    port_handler_->setPacketTimeout( uint16_t(11+dp.size()) );
     for(int i_servo=0; i_servo<num_servo; i_servo++) {
+        timeout_last_read_ = false;
+        port_handler_->setPacketTimeout( uint16_t(11+dp.size()) );
         while(port_handler_->getBytesAvailable() < 11+dp.size()) {
         if (port_handler_->isPacketTimeout()) {
             if(varbose_) printf("Sync Read Error(time out): ID %d, available bytes %d / %d\n", servo_id_list[i_servo], port_handler_->getBytesAvailable(), 11+dp.size());
@@ -666,8 +662,8 @@ map<uint8_t, int64_t> DynamixelComunicator::SyncRead_fast(DynamixelAddress dp, c
 	uint8_t length_a_servo = 4+dp.size(); // id error {data} crc crc
 	uint16_t length_read_data = 8+length_a_servo*num_servo;
     timeout_last_read_ = false;
-	port_handler_->setPacketTimeout( uint16_t(length_read_data) );
-	while(port_handler_->getBytesAvailable() < length_read_data) {
+    port_handler_->setPacketTimeout( uint16_t(length_read_data) );
+    while(port_handler_->getBytesAvailable() < length_read_data) {
 		if (port_handler_->isPacketTimeout()) {
             if(varbose_) printf("Fast Sync Read Error(time out) : available bytes %d / %d\n", port_handler_->getBytesAvailable(), length_read_data);
             timeout_last_read_ = true;
@@ -977,9 +973,9 @@ map<uint8_t, vector<int64_t>> DynamixelComunicator::SyncRead(const vector<Dynami
     map<uint8_t, vector<int64_t>> id_data_vec_map;
     hardware_error_last_read_ = false;
     comm_error_last_read_ = false;
-    timeout_last_read_ = false;
-    port_handler_->setPacketTimeout( uint16_t(11+size_total_dp) );
     for(int i_servo=0; i_servo<num_servo; i_servo++) {
+        timeout_last_read_ = false;
+        port_handler_->setPacketTimeout( uint16_t(11+size_total_dp) );
         while(port_handler_->getBytesAvailable() < 11+size_total_dp) {
         if (port_handler_->isPacketTimeout()) {
             if(varbose_) printf("Sync Read Error(time out): ID %d, available bytes %d / %d\n", servo_id_list[i_servo], port_handler_->getBytesAvailable(), 11+size_total_dp);
