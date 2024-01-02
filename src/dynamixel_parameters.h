@@ -261,7 +261,7 @@ namespace dyn_x {
     inline DynamixelAddress position_p_gain       ( 84, TYPE_UINT16); // 型番によってデフォルト値が異なる
     inline DynamixelAddress feedforward_acc_gain  ( 88, TYPE_UINT16);
     inline DynamixelAddress feedforward_vel_gain  ( 90, TYPE_UINT16);
-    inline DynamixelAddress bus_watchbdog         ( 98, TYPE_INT8  , UNIT_BUS_WATCHDOG);
+    inline DynamixelAddress bus_watchdog          ( 98, TYPE_INT8  , UNIT_BUS_WATCHDOG);
     inline DynamixelAddress goal_pwm              (100, TYPE_INT16 , UNIT_PWM);
     inline DynamixelAddress goal_current          (102, TYPE_INT16 , UNIT_CURRENT);
     inline DynamixelAddress goal_velocity         (104, TYPE_INT32 , UNIT_VELOCITY);
@@ -315,7 +315,7 @@ namespace dyn_p {
     inline DynamixelAddress position_d_gain       (528, TYPE_UINT16);
     inline DynamixelAddress position_i_gain       (530, TYPE_UINT16);
     inline DynamixelAddress position_p_gain       (532, TYPE_UINT16);
-    inline DynamixelAddress bus_watchbdog         (546, TYPE_UINT8 , UNIT_BUS_WATCHDOG);
+    inline DynamixelAddress bus_watchdog          (546, TYPE_UINT8 , UNIT_BUS_WATCHDOG);
     inline DynamixelAddress goal_pwm              (548, TYPE_INT16 , UNIT_PWM);
     inline DynamixelAddress goal_current          (550, TYPE_INT16 , UNIT_CURRENT);
     inline DynamixelAddress goal_velocity         (552, TYPE_INT32 , UNIT_VELOCITY);
