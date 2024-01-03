@@ -3,6 +3,7 @@
 
 #include <cassert>
 #include <stdint.h>
+#include <cmath>
 
 enum DynamixelModelNumber {
   // Dynamixel X series
@@ -146,20 +147,22 @@ class DynamixelAddress {
   DynamixelPhysicalUnit physical_unit() const { return physical_unit_; }
   int64_t val2pulse(const double val, const uint16_t model_num) const { 
     assert(dynamixel_series(model_num) != SERIES_UNKNOWN); // 未対応のシリーズの場合はエラー
+    double pulse;
     switch (physical_unit_) {
-      case UNIT_POSITION:         return       val /*rad*/  / (2*M_PI) * pos_resolution(model_num);
-      case UNIT_POSITION_OFFSET:  return (M_PI+val)/*rad*/  / (2*M_PI) * pos_resolution(model_num);
-      case UNIT_VELOCITY:         return       val/*rad_s*/ / vel_factor(model_num);
-      case UNIT_ACCELERATION:     return       val/*rad_ss*// acc_factor(model_num);
-      case UNIT_CURRENT:          return       val/*mA*/    / cur_factor(model_num);
-      case UNIT_VOLTAGE:          return       val/*V*/     / 0.1/*V*/;
-      case UNIT_TEMPERATURE:      return       val/*degC*/  / 1.0/*degC*/;
-      case UNIT_PWM:              return       val/*%*/     / 100.0 * pwm_resolution(model_num)/*degC*/;
-      case UNIT_RETURN_DELAY_TIME:return       val/*us*/    / 2.0 /*us*/;
-      case UNIT_BUS_WATCHDOG:     return       val/*ms*/    / 20.0/*ms*/;
-      case UNIT_REALTIME_TICK:    return       val/*ms*/    / 1.0 /*ms*/;
-      default:                    return       val;
+      case UNIT_POSITION:         pulse=       val /*rad*/  / (2*M_PI) * pos_resolution(model_num); break;
+      case UNIT_POSITION_OFFSET:  pulse= (M_PI+val)/*rad*/  / (2*M_PI) * pos_resolution(model_num); break;
+      case UNIT_VELOCITY:         pulse=       val/*rad_s*/ / vel_factor(model_num); break;
+      case UNIT_ACCELERATION:     pulse=       val/*rad_ss*// acc_factor(model_num); break;
+      case UNIT_CURRENT:          pulse=       val/*mA*/    / cur_factor(model_num); break;
+      case UNIT_VOLTAGE:          pulse=       val/*V*/     / 0.1/*V*/; break;
+      case UNIT_TEMPERATURE:      pulse=       val/*degC*/  / 1.0/*degC*/; break;
+      case UNIT_PWM:              pulse=       val/*%*/     / 100.0 * pwm_resolution(model_num)/*degC*/; break;
+      case UNIT_RETURN_DELAY_TIME:pulse=       val/*us*/    / 2.0 /*us*/; break;
+      case UNIT_BUS_WATCHDOG:     pulse=       val/*ms*/    / 20.0/*ms*/; break;
+      case UNIT_REALTIME_TICK:    pulse=       val/*ms*/    / 1.0 /*ms*/; break;
+      default:                    pulse=       val; break;
     }
+    return pulse>0 ? ceil(pulse) : floor(pulse);
   }
   double pulse2val(const int64_t pulse, const uint16_t model_num ) const {
     assert(dynamixel_series(model_num) != SERIES_UNKNOWN); // 未対応のシリーズの場合はエラー
