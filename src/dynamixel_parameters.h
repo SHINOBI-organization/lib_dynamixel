@@ -70,7 +70,8 @@ enum DynamixelBaudrateIndex {
   BAUDRATE_INDEX_3M     = 5,
   BAUDRATE_INDEX_4M     = 6,
   BAUDRATE_INDEX_4M5    = 7,
-  BAUDRATE_INDEX_10M5   = 8,
+  BAUDRATE_INDEX_6M     = 8,
+  BAUDRATE_INDEX_10M5   = 9,
 };
 enum DynamixelOperatingMode {
   OPERATING_MODE_CURRENT               = 0,
