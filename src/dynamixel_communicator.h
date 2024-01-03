@@ -10,16 +10,17 @@ using std::string;
 #include <cmath>
 #include <algorithm>
 
-#include "../download/port_handler.h"
+#include "../download/port_handler_fix.h"
 #include "dynamixel_parameters.h"
 
 
 class DynamixelComunicator {
     public:
         DynamixelComunicator() { }
-        DynamixelComunicator(const char *port_name, int baudrate) {
+        DynamixelComunicator(const char *port_name, int baudrate, int latency_timer = 16) {
             GetPortHandler(port_name);
             set_baudrate(baudrate);
+            set_latency_timer(latency_timer);
         }
 
         void GetPortHandler(const char *port_name) {
@@ -28,6 +29,7 @@ class DynamixelComunicator {
         }
 
         void set_baudrate(int baudrate) { baudrate_ = baudrate; }
+        void set_latency_timer(uint8_t latency_timer) { latency_timer_ = latency_timer; }
         void set_status_return_level(int level) { status_return_level_ = level; }
         void set_varbose(bool varbose) { varbose_ = varbose; }
 
@@ -77,6 +79,7 @@ class DynamixelComunicator {
         const char *port_name_;
         PortHandler *port_handler_;
         uint32_t baudrate_;
+        uint8_t latency_timer_ = 16;
         uint8_t status_return_level_ = 2;
         uint8_t  data_write_[4];
         uint8_t  data_read_[4];

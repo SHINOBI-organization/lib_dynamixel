@@ -194,11 +194,14 @@ bool DynamixelComunicator::OpenPort() {
     return false;
   }
 
+  port_handler_->setLatencyTimer(latency_timer_);
+  printf("Succeeded to change the latency timer : %d!\n", latency_timer_);
+
   if (port_handler_->setBaudRate(baudrate_)) {
-    printf("Succeeded to change the baudrate : %s!\n", port_name_);
+    printf("Succeeded to change the baudrate : %d!\n", baudrate_);
     return true;
   } else {
-    printf("Failed to change the baudrate : %s!\n", port_name_);
+    printf("Failed to change the baudrate : %d!\n", baudrate_);
     return false;
   }
 }

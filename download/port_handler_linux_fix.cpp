@@ -28,7 +28,7 @@
 #include <sys/ioctl.h>
 #include <linux/serial.h>
 
-#include "port_handler_linux.h"
+#include "port_handler_linux_fix.h"
 
 #define LATENCY_TIMER  16  // msec (USB latency timer)
                            // You should adjust the latency timer value. From the version Ubuntu 16.04.2, the default latency timer of the usb serial is '16 msec'.
@@ -60,6 +60,7 @@
 PortHandlerLinux::PortHandlerLinux(const char *port_name)
   : socket_fd_(-1),
     baudrate_(DEFAULT_BAUDRATE_),
+    latency_timer_(LATENCY_TIMER),
     packet_start_time_(0.0),
     packet_timeout_(0.0),
     tx_time_per_byte(0.0)
@@ -95,6 +96,15 @@ char *PortHandlerLinux::getPortName()
   return port_name_;
 }
 
+void PortHandlerLinux::setLatencyTimer(const int latency_timer)
+{
+	latency_timer_ = latency_timer;
+}
+
+int PortHandlerLinux::getLatencyTimer()
+{
+  return latency_timer_;
+}
 // TODO: baud number ??
 bool PortHandlerLinux::setBaudRate(const int baudrate)
 {
@@ -140,7 +150,7 @@ int PortHandlerLinux::writePort(uint8_t *packet, int length)
 void PortHandlerLinux::setPacketTimeout(uint16_t packet_length)
 {
   packet_start_time_  = getCurrentTime();
-  packet_timeout_     = (tx_time_per_byte * (double)packet_length) + (LATENCY_TIMER * 2.0) + 2.0;
+  packet_timeout_     = (tx_time_per_byte * (double)packet_length) + (latency_timer_ * 2.0) + 2.0;
 }
 
 void PortHandlerLinux::setPacketTimeout(double msec)

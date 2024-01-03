@@ -102,6 +102,20 @@ class WINDECLSPEC PortHandler
   virtual char   *getPortName() = 0;
 
   ////////////////////////////////////////////////////////////////////////////////
+  /// @brief The function that sets latency timer
+  /// @description The function sets latency timer.
+  /// @param latency_timer The latency timer value [msec]
+  ////////////////////////////////////////////////////////////////////////////////    
+  virtual void setLatencyTimer(const int latency_timer) = 0;
+
+  ////////////////////////////////////////////////////////////////////////////////
+  /// @brief The function that returns latency timer value
+  /// @description The function returns current latency timer value.
+  /// @return latency_timer [msec]
+  ////////////////////////////////////////////////////////////////////////////////
+  virtual int getLatencyTimer() = 0;
+
+  ////////////////////////////////////////////////////////////////////////////////
   /// @brief The function that sets baudrate into the port handler
   /// @description The function sets baudrate into the port handler.
   /// @param baudrate Baudrate

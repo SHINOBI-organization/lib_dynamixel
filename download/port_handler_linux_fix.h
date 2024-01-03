@@ -23,7 +23,7 @@
 #define DYNAMIXEL_SDK_INCLUDE_DYNAMIXEL_SDK_LINUX_PORTHANDLERLINUX_H_
 
 
-#include "port_handler.h"
+#include "port_handler_fix.h"
 
 //namespace dynamixel
 //{
@@ -36,6 +36,7 @@ class PortHandlerLinux : public PortHandler
  private:
   int     socket_fd_;
   int     baudrate_;
+  int     latency_timer_;
   char    port_name_[100];
 
   double  packet_start_time_;
@@ -94,6 +95,20 @@ class PortHandlerLinux : public PortHandler
   /// @return Port name
   ////////////////////////////////////////////////////////////////////////////////
   char   *getPortName();
+
+  ////////////////////////////////////////////////////////////////////////////////
+  /// @brief The function that sets latency timer
+  /// @description The function sets latency timer.
+  /// @param latency_timer The latency timer value [msec]
+  ////////////////////////////////////////////////////////////////////////////////
+  void    setLatencyTimer(const int latency_timer);
+
+  ////////////////////////////////////////////////////////////////////////////////
+  /// @brief The function that returns latency timer value
+  /// @description The function returns current latency timer value.
+  /// @return latency_timer [msec]
+  ////////////////////////////////////////////////////////////////////////////////
+  int     getLatencyTimer();
 
   ////////////////////////////////////////////////////////////////////////////////
   /// @brief The function that sets baudrate into the port handler
