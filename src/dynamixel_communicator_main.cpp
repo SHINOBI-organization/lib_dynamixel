@@ -29,7 +29,7 @@ static const uint8_t COM_ERROR_DATA_LIMIT  = 5;
 static const uint8_t COM_ERROR_ACCESS      = 6;
 static const uint8_t COM_ERROR_ALERT       = 7;
 
-uint16_t DynamixelComunicator::CalcChecksum(uint8_t data[], uint8_t length) {
+uint16_t DynamixelCommunicator::CalcChecksum(uint8_t data[], uint8_t length) {
   uint16_t crc_accum = 0;
   uint16_t i;
   uint16_t crc_table[256] = {0x0000,
@@ -85,7 +85,7 @@ uint16_t DynamixelComunicator::CalcChecksum(uint8_t data[], uint8_t length) {
  * @param int64_t data_int 書き込む値．int型に変換済み．どの型にも対応できるようにint64_t
  * @return void
  */
-void DynamixelComunicator::EncodeDataWrite(DynamixelDataType type, int64_t data_int) {
+void DynamixelCommunicator::EncodeDataWrite(DynamixelDataType type, int64_t data_int) {
   switch (type) {
     case TYPE_INT8 : {
       int8_t d = int8_t(data_int);
@@ -133,7 +133,7 @@ void DynamixelComunicator::EncodeDataWrite(DynamixelDataType type, int64_t data_
  * @param DynamixelDataType type 変換後のデータ型
  * @return (int64_t) 変換後の値．どの型にも対応できるようにint64_t
  */
-int64_t DynamixelComunicator::DecodeDataRead(DynamixelDataType type) {
+int64_t DynamixelCommunicator::DecodeDataRead(DynamixelDataType type) {
   switch (type) {
     case TYPE_INT8 : {
       int8_t data_int = 0;
@@ -186,7 +186,7 @@ int64_t DynamixelComunicator::DecodeDataRead(DynamixelDataType type) {
 /** @fn
  * @brief port_handler_を用いて，ポートを開く
  */
-bool DynamixelComunicator::OpenPort() {
+bool DynamixelCommunicator::OpenPort() {
   if (port_handler_->openPort()) {
     printf("Succeeded to open the port : %s!\n", port_name_);
   } else {
@@ -209,7 +209,7 @@ bool DynamixelComunicator::OpenPort() {
 /** @fn
  * @brief port_handler_を用いて，ポートを閉じる
  */
-bool DynamixelComunicator::ClosePort() {
+bool DynamixelCommunicator::ClosePort() {
   port_handler_->closePort();
   printf("Close port : %s!\n", port_name_);
   return true;
@@ -219,7 +219,7 @@ bool DynamixelComunicator::ClosePort() {
  * @brief 指定したDynamixelをリブートする
  * @param uint8_t servo_id 対象のID
  */
-void DynamixelComunicator::Reboot(uint8_t servo_id) {
+void DynamixelCommunicator::Reboot(uint8_t servo_id) {
   uint8_t send_data[10] = {0};
   uint16_t length = 3;
   send_data[0] = HEADER[0];
@@ -257,7 +257,7 @@ void DynamixelComunicator::Reboot(uint8_t servo_id) {
  * @param uint8_t servo_id 対象のID
  * @param FactoryResetLevel level リセットレベル
  */
-void DynamixelComunicator::FactoryReset(uint8_t servo_id, FactoryResetLevel level) {
+void DynamixelCommunicator::FactoryReset(uint8_t servo_id, FactoryResetLevel level) {
   uint8_t send_data[11] = {0};
   uint16_t length = 4;
   send_data[0] = HEADER[0];
@@ -286,7 +286,7 @@ void DynamixelComunicator::FactoryReset(uint8_t servo_id, FactoryResetLevel leve
  * @param uint8_t servo_id 対象のID
  * @return bool 応答があったかどうか
  */
-bool DynamixelComunicator::Ping(uint8_t servo_id) {
+bool DynamixelCommunicator::Ping(uint8_t servo_id) {
   uint8_t send_data[10] = {0};
   uint16_t length = 3;
   send_data[0] = HEADER[0];
@@ -321,7 +321,7 @@ bool DynamixelComunicator::Ping(uint8_t servo_id) {
  * @param int64_t data_int 書き込むデータ．intに変換済みのもの．どの型にも対応できるようにint64_t
  * @return  bool 通信成功判定
  */
-bool DynamixelComunicator::Write(DynamixelAddress dp, uint8_t servo_id, int64_t data_int) {
+bool DynamixelCommunicator::Write(DynamixelAddress dp, uint8_t servo_id, int64_t data_int) {
     uint8_t send_data[16] = {0}; // 書き込むdpのサイズによって変わるが， dp.size()は最大4 4+12=16より十分
     uint16_t length = dp.size()+5;
     send_data[0] = HEADER[0];
@@ -393,7 +393,7 @@ bool DynamixelComunicator::Write(DynamixelAddress dp, uint8_t servo_id, int64_t 
  * @param uint8_t servo_id 対象のID
  * @return (int64_t) 読み込んだデータ．intのまま
  */
-int64_t DynamixelComunicator::Read(DynamixelAddress dp, uint8_t servo_id) {
+int64_t DynamixelCommunicator::Read(DynamixelAddress dp, uint8_t servo_id) {
     uint8_t send_data[14] = {0}; // Readのインストラクションパケットは固定で14
     uint16_t length = 7;
     send_data[0] = HEADER[0];
@@ -472,7 +472,7 @@ int64_t DynamixelComunicator::Read(DynamixelAddress dp, uint8_t servo_id) {
  * @param vector<uint64_t> data_int_list 書き込むデータのリスト．intに変換済みのもの．どの型にも対応できるようにint64_t
  * @return bool 通信成功判定
  */
-bool DynamixelComunicator::SyncWrite(DynamixelAddress dp,  const vector<uint8_t>& servo_id_list, const vector<int64_t>& data_int_list) {
+bool DynamixelCommunicator::SyncWrite(DynamixelAddress dp,  const vector<uint8_t>& servo_id_list, const vector<int64_t>& data_int_list) {
   if (servo_id_list.size() > 100) {
     if(varbose_) printf("Sync Write Error(too many servo): servo num=%d > 100\n", (int)servo_id_list.size());
     return false;
@@ -518,7 +518,7 @@ bool DynamixelComunicator::SyncWrite(DynamixelAddress dp,  const vector<uint8_t>
  * @param map<uint8_t, int64_t> id_data_int_map 書き込むサーボのIDと書き込むデータのマップ
  * @return  bool 通信成功判定
  */
-bool DynamixelComunicator::SyncWrite(DynamixelAddress dp, const map<uint8_t, int64_t>& id_data_int_map) {
+bool DynamixelCommunicator::SyncWrite(DynamixelAddress dp, const map<uint8_t, int64_t>& id_data_int_map) {
     std::vector<uint8_t>  servo_id_list; servo_id_list.reserve(id_data_int_map.size());
     std::vector<int64_t> data_int_list; data_int_list.reserve(id_data_int_map.size());
     for (const auto& id_data : id_data_int_map) {
@@ -534,7 +534,7 @@ bool DynamixelComunicator::SyncWrite(DynamixelAddress dp, const map<uint8_t, int
  * @param vector<uint8_t> servo_id_list 読み込むサーボのIDのリスト
  * @return map<uint8_t, int64_t> 読み込んだサーボのIDとデータのマップ
  */
-map<uint8_t, int64_t> DynamixelComunicator::SyncRead( DynamixelAddress dp, const vector<uint8_t>& servo_id_list) {
+map<uint8_t, int64_t> DynamixelCommunicator::SyncRead( DynamixelAddress dp, const vector<uint8_t>& servo_id_list) {
     if (servo_id_list.size() > 100) {
         if(varbose_) printf("Sync Read Error(too many servo): servo num=%d > 100\n", (int)servo_id_list.size());
         return map<uint8_t, int64_t>();
@@ -631,7 +631,7 @@ map<uint8_t, int64_t> DynamixelComunicator::SyncRead( DynamixelAddress dp, const
  * @param vector<uint8_t> servo_id_list 読み込むサーボのIDのリスト
  * @return map<uint8_t, int64_t> 読み込んだサーボのIDとデータのマップ
  */
-map<uint8_t, int64_t> DynamixelComunicator::SyncRead_fast(DynamixelAddress dp, const vector<uint8_t>& servo_id_list) {
+map<uint8_t, int64_t> DynamixelCommunicator::SyncRead_fast(DynamixelAddress dp, const vector<uint8_t>& servo_id_list) {
     if (servo_id_list.size() > 50) {
         if(varbose_) printf("Fast Sync Read Error(too many servo): servo num=%d > 50\n", (int)servo_id_list.size());
         return map<uint8_t, int64_t>();
@@ -728,7 +728,7 @@ map<uint8_t, int64_t> DynamixelComunicator::SyncRead_fast(DynamixelAddress dp, c
  * @param vector<int64_t> data_int_list 書き込むデータのリスト．intに変換済みのもの．どの型にも対応できるようにint64_t
  * @return  bool 通信成功判定
  */
-bool DynamixelComunicator::Write(const vector<DynamixelAddress>& dp_list_sorted, uint8_t servo_id, const vector<int64_t>& data_int_list) {
+bool DynamixelCommunicator::Write(const vector<DynamixelAddress>& dp_list_sorted, uint8_t servo_id, const vector<int64_t>& data_int_list) {
     if (dp_list_sorted.size() > 10) {
         if(varbose_) printf("Write Error(too many param): param num=%d > 10\n", (int)dp_list_sorted.size());
         return false;
@@ -824,7 +824,7 @@ bool DynamixelComunicator::Write(const vector<DynamixelAddress>& dp_list_sorted,
  * @param vector<DynamixelAddress> dp_list 対象のパラメータのインスタンスの配列
  * @return vector<int64_t> 読み込んだデータを格納する配列．intに変換済みのもの．
  */
-vector<int64_t> DynamixelComunicator::Read(const vector<DynamixelAddress>& dp_list, uint8_t servo_id) {
+vector<int64_t> DynamixelCommunicator::Read(const vector<DynamixelAddress>& dp_list, uint8_t servo_id) {
     if (dp_list.size() > 10) {
         if(varbose_) printf("Read Error(too many param): ID %d, param num=%d > 10\n", (int)servo_id, (int)dp_list.size());
         return vector<int64_t>();
@@ -928,7 +928,7 @@ vector<int64_t> DynamixelComunicator::Read(const vector<DynamixelAddress>& dp_li
  * @param vector<uint8_t> servo_id_list 読み込むサーボのIDのリスト
  * @return map<uint8_t, vector<int64_t>> 読み込んだサーボのIDとデータのマップ
  */
-map<uint8_t, vector<int64_t>> DynamixelComunicator::SyncRead(const vector<DynamixelAddress>& dp_list, const vector<uint8_t>& servo_id_list) {
+map<uint8_t, vector<int64_t>> DynamixelCommunicator::SyncRead(const vector<DynamixelAddress>& dp_list, const vector<uint8_t>& servo_id_list) {
     if (servo_id_list.size() > 100) {
         if(varbose_) printf("Sync Read Error(too many servo): servo num=%d > 100\n", (int)servo_id_list.size());
         return map<uint8_t, vector<int64_t>>();
@@ -1043,7 +1043,7 @@ map<uint8_t, vector<int64_t>> DynamixelComunicator::SyncRead(const vector<Dynami
  * @param vector<uint8_t> servo_id_list 読み込むサーボのIDのリスト
  * @return map<uint8_t, vector<int64_t>> 読み込んだサーボのIDとデータのマップ
  */
-map<uint8_t, vector<int64_t>> DynamixelComunicator::SyncRead_fast(const vector<DynamixelAddress>& dp_list, const vector<uint8_t>& servo_id_list) {
+map<uint8_t, vector<int64_t>> DynamixelCommunicator::SyncRead_fast(const vector<DynamixelAddress>& dp_list, const vector<uint8_t>& servo_id_list) {
     if ( servo_id_list.size() > 50 ) {
         if(varbose_) printf("Fast Sync Read Error(too many servo): servo num=%d > 50\n", (int)servo_id_list.size());
         return map<uint8_t, vector<int64_t>>();
@@ -1163,7 +1163,7 @@ map<uint8_t, vector<int64_t>> DynamixelComunicator::SyncRead_fast(const vector<D
  * @param vector<vector<int64_t>> data_vec_list 書き込むデータのリスト．intに変換済みのもの．どの型にも対応できるようにint64_t
  * @return bool 通信成功判定
  */
-bool DynamixelComunicator::SyncWrite(const vector<DynamixelAddress>& dp_list_sorted, const vector<uint8_t>& servo_id_list, const vector<vector<int64_t>>& data_vec_list) {
+bool DynamixelCommunicator::SyncWrite(const vector<DynamixelAddress>& dp_list_sorted, const vector<uint8_t>& servo_id_list, const vector<vector<int64_t>>& data_vec_list) {
   if (dp_list_sorted.size() > 10) {
     if(varbose_) printf("Sync Write Error(too many param): param num=%d > 10\n", (int)dp_list_sorted.size());
     return false;
@@ -1233,7 +1233,7 @@ bool DynamixelComunicator::SyncWrite(const vector<DynamixelAddress>& dp_list_sor
  * @param map<uint8_t, int64_t> id_data_int_map 書き込むサーボのIDと書き込むデータのマップ
  * @return  bool 通信成功判定
  */
-bool DynamixelComunicator::SyncWrite(const vector<DynamixelAddress>& dp_list, const map<uint8_t, vector<int64_t>>& id_data_int_map) {
+bool DynamixelCommunicator::SyncWrite(const vector<DynamixelAddress>& dp_list, const map<uint8_t, vector<int64_t>>& id_data_int_map) {
     vector<uint8_t>         servo_id_list; servo_id_list.reserve(id_data_int_map.size());
     vector<vector<int64_t>> data_vec_list; data_vec_list.reserve(id_data_int_map.size());
     for (const auto& id_data : id_data_int_map) {

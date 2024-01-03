@@ -10,7 +10,7 @@ using namespace std::chrono_literals;
  * @param uint8_t servo_id 対象のID
  * @return bool 応答があったかどうか
  */
-bool DynamixelComunicator::tryPing(uint8_t servo_id) {
+bool DynamixelCommunicator::tryPing(uint8_t servo_id) {
   for (int i=0; i<num_try_; i++) {
     if ( Ping(servo_id) ) return true;
     sleep_for(1ms*msec_interval_);
@@ -25,7 +25,7 @@ bool DynamixelComunicator::tryPing(uint8_t servo_id) {
  * @param int64_t data_int 書き込むデータ．intに変換済みのもの．どの型にも対応できるようにint64_t
  * @return  bool 通信成功判定
  */
-bool DynamixelComunicator::tryWrite(DynamixelAddress dp, uint8_t servo_id, int64_t data_int) {
+bool DynamixelCommunicator::tryWrite(DynamixelAddress dp, uint8_t servo_id, int64_t data_int) {
   for (int i=0; i<num_try_; i++) {
     if ( Write(dp, servo_id, data_int) ) return true;
     sleep_for(1ms*msec_interval_);
@@ -39,7 +39,7 @@ bool DynamixelComunicator::tryWrite(DynamixelAddress dp, uint8_t servo_id, int64
  * @param uint8_t servo_id 対象のID
  * @return (int64_t) 読み込んだデータ．intのまま
  */
-int64_t DynamixelComunicator::tryRead(DynamixelAddress dp, uint8_t servo_id) {
+int64_t DynamixelCommunicator::tryRead(DynamixelAddress dp, uint8_t servo_id) {
     int64_t data_int = 0;
     for (int i=0; i<num_try_; i++) {
         data_int = Read(dp, servo_id);
@@ -56,7 +56,7 @@ int64_t DynamixelComunicator::tryRead(DynamixelAddress dp, uint8_t servo_id) {
  * @param vector<int64_t> data_int_list 書き込むデータの配列．intに変換済みのもの．どの型にも対応できるようにint64_t
  * @return  bool 通信成功判定
  */
-bool DynamixelComunicator::tryWrite(const vector<DynamixelAddress>& dp_list, uint8_t servo_id, const vector<int64_t>& data_int_list) {
+bool DynamixelCommunicator::tryWrite(const vector<DynamixelAddress>& dp_list, uint8_t servo_id, const vector<int64_t>& data_int_list) {
   for (int i=0; i<num_try_; i++) {
     if ( Write(dp_list, servo_id, data_int_list) ) return true;
     sleep_for(1ms*msec_interval_);
@@ -70,7 +70,7 @@ bool DynamixelComunicator::tryWrite(const vector<DynamixelAddress>& dp_list, uin
  * @param uint8_t servo_id 対象のID
  * @return vector<int64_t> 読み込んだデータを格納する配列．intに変換済みのもの．
  */
-vector<int64_t> DynamixelComunicator::tryRead(const vector<DynamixelAddress>& dp_list, uint8_t servo_id) {
+vector<int64_t> DynamixelCommunicator::tryRead(const vector<DynamixelAddress>& dp_list, uint8_t servo_id) {
     vector<int64_t> data_int_list(dp_list.size());
     for (int i=0; i<num_try_; i++) {
         data_int_list = Read(dp_list, servo_id);

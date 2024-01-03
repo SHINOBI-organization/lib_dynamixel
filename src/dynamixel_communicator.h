@@ -14,10 +14,10 @@ using std::string;
 #include "dynamixel_parameters.h"
 
 
-class DynamixelComunicator {
+class DynamixelCommunicator {
     public:
-        DynamixelComunicator() { }
-        DynamixelComunicator(const char *port_name, int baudrate, int latency_timer = 16) {
+        DynamixelCommunicator() { }
+        DynamixelCommunicator(const char *port_name, int baudrate, int latency_timer = 16) {
             GetPortHandler(port_name);
             set_baudrate(baudrate);
             set_latency_timer(latency_timer);
