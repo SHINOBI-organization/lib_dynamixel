@@ -335,7 +335,7 @@ bool DynamixelCommunicator::Write(DynamixelAddress dp, uint8_t servo_id, int64_t
     send_data[8] = dp.address() & 0xFF;
     send_data[9] = (dp.address()>>8) & 0xFF;
     EncodeDataWrite(dp.data_type(), data_int);
-    for(int i=0; i<dp.size(); i++) {
+    for(size_t i=0; i<dp.size(); i++) {
         send_data[10+i] = data_write_[i];
     }
     uint16_t sum = CalcChecksum(send_data, 10+dp.size());
@@ -460,7 +460,7 @@ int64_t DynamixelCommunicator::Read(DynamixelAddress dp, uint8_t servo_id) {
     }
     // 正常なデータ, hardware error は通信の可否に影響はないので以降でチェックする．
     hardware_error_last_read_ = ( error & 0x80 ); // error の最上位ビットが1のとき，ハードウェアエラーが発生している
-    for(int i=0; i<dp.size(); i++) data_read_[i] = read_data[9+i];
+    for(size_t i=0; i<dp.size(); i++) data_read_[i] = read_data[9+i];
     return DecodeDataRead(dp.data_type());
 }
 
@@ -580,7 +580,7 @@ map<uint8_t, int64_t> DynamixelCommunicator::SyncRead( DynamixelAddress dp, cons
         }
         }
 
-        uint8_t read_length = port_handler_->readPort(read_data, 11+dp.size());
+        int8_t read_length = port_handler_->readPort(read_data, 11+dp.size());
 
         //  エラーチェック
         if (read_length == -1) {
@@ -618,7 +618,7 @@ map<uint8_t, int64_t> DynamixelCommunicator::SyncRead( DynamixelAddress dp, cons
 
     // 正常なデータ, hardware error は通信の可否に影響はないので以降でチェックする．
         if ( error & 0x80 ) hardware_error_last_read_ = true; // error の最上位ビットが1のとき，ハードウェアエラーが発生している
-        for(int i=0; i<dp.size(); i++) data_read_[i] = read_data[9+i];
+        for(size_t i=0; i<dp.size(); i++) data_read_[i] = read_data[9+i];
         id_data_int_map[id] = DecodeDataRead(dp.data_type());
     }
     return id_data_int_map;
@@ -676,7 +676,7 @@ map<uint8_t, int64_t> DynamixelCommunicator::SyncRead_fast(DynamixelAddress dp, 
 
 	// パケットの読み込み
     uint8_t read_data[408]; // 読み込むサーボとデータサイズによって変わるが， (4+4)*50+8=408 100サーボに同時に読み込むことはないので十分
-    uint8_t read_length = port_handler_->readPort(read_data, length_read_data);
+    int8_t read_length = port_handler_->readPort(read_data, length_read_data);
     // 全体のエラーチェック
     comm_error_last_read_ = false;
     if (read_length == -1) {
@@ -715,7 +715,7 @@ map<uint8_t, int64_t> DynamixelCommunicator::SyncRead_fast(DynamixelAddress dp, 
         }
 		// 正常なデータ, hardware error は通信の可否に影響はないので以降でチェックする．
         if ( error & 0x80 ) hardware_error_last_read_ = true; // error の最上位ビットが1のとき，ハードウェアエラーが発生している
-		for(int i=0; i<dp.size(); i++) data_read_[i] = read_data[10 + i_servo*length_a_servo + i];
+		for(size_t i=0; i<dp.size(); i++) data_read_[i] = read_data[10 + i_servo*length_a_servo + i];
 		id_data_int_map[id] = DecodeDataRead(dp.data_type());
 	}
 	return id_data_int_map;
@@ -740,7 +740,7 @@ bool DynamixelCommunicator::Write(const vector<DynamixelAddress>& dp_list_sorted
     // 書き込むデータの範囲を決定, ソート済みかつ連続していないとNG
     DynamixelAddress dp_min = *dp_list_sorted.begin();
     DynamixelAddress dp_max = *dp_list_sorted.rbegin();
-    for (int i=0; i<dp_list_sorted.size()-1; i++) { // アドレスが連続しているか確認
+    for (size_t i=0; i<dp_list_sorted.size()-1; i++) { // アドレスが連続しているか確認
         if (dp_list_sorted[i].address() + dp_list_sorted[i].size() != dp_list_sorted[i+1].address()) {
             if(varbose_) printf("Write Error(address is not continuous): ID %d\n", servo_id);
             return false;
@@ -759,11 +759,11 @@ bool DynamixelCommunicator::Write(const vector<DynamixelAddress>& dp_list_sorted
     send_data[7] = INSTRUCTION_WRITE;  // instruction
     send_data[8] = dp_min.address() & 0xFF;
     send_data[9] = (dp_min.address()>>8) & 0xFF;
-    for (int i=0; i<dp_list_sorted.size(); i++) {
+    for (size_t i=0; i<dp_list_sorted.size(); i++) {
         const DynamixelAddress& dp = dp_list_sorted[i];
         uint8_t index = dp.address() - dp_min.address();
         EncodeDataWrite(dp.data_type(), data_int_list[i]);
-        for(int i=0; i<dp.size(); i++) {
+        for(size_t i=0; i<dp.size(); i++) {
             send_data[10+index+i] = data_write_[i];
         }
     }
@@ -911,10 +911,10 @@ vector<int64_t> DynamixelCommunicator::Read(const vector<DynamixelAddress>& dp_l
     // 正常なデータ
     hardware_error_last_read_ = ( error & 0x80 ); // error の最上位ビットが1のとき，ハードウェアエラーが発生している
     vector<int64_t> data_int_list(dp_list.size(), 0);
-    for (int i_dp=0; i_dp<dp_list.size(); i_dp++) {
+    for (size_t i_dp=0; i_dp<dp_list.size(); i_dp++) {
         const DynamixelAddress& dp = dp_list[i_dp];
         uint8_t index = dp.address() - dp_min.address();
-        for(int i=0; i<dp.size(); i++) {
+        for(size_t i=0; i<dp.size(); i++) {
             data_read_[i] = read_data[9+index+i];
         }
         data_int_list[i_dp] = DecodeDataRead(dp.data_type());
@@ -969,7 +969,7 @@ map<uint8_t, vector<int64_t>> DynamixelCommunicator::SyncRead(const vector<Dynam
     port_handler_->clearPort();
     port_handler_->writePort(send_data, 14+num_servo);
 
-    // if(varbose_) {printf("write:" ); for (int i=0; i<14+num_servo; i++) printf("%02X ", send_data[i]); printf("\n");}
+    // if(varbose_) {printf("write:" ); for (size_t i=0; i<14+num_servo; i++) printf("%02X ", send_data[i]); printf("\n");}
 
     // データ読み込みの処理
     uint8_t read_data[51]; // 読み込むdpの数とサイズによって変わるが， 4*10+11=51 4バイトのデータ10個を同時に読み込むことはないので十分 
@@ -987,8 +987,8 @@ map<uint8_t, vector<int64_t>> DynamixelCommunicator::SyncRead(const vector<Dynam
         }
         }
 
-        uint8_t read_length = port_handler_->readPort(read_data, 11+size_total_dp);
-        // if(varbose_) {printf("read:" ); for (int i=0; i<read_length; i++) printf("%02X ", read_data[i]); printf("\n");}
+        int8_t read_length = port_handler_->readPort(read_data, 11+size_total_dp);
+        // if(varbose_) {printf("read:" ); for (size_t i=0; i<read_length; i++) printf("%02X ", read_data[i]); printf("\n");}
 
         // エラーチェック
         if (read_length == -1) {
@@ -1027,10 +1027,10 @@ map<uint8_t, vector<int64_t>> DynamixelCommunicator::SyncRead(const vector<Dynam
         // 正常なデータ
         if ( error & 0x80 ) hardware_error_last_read_ = true ; // error の最上位ビットが1のとき，ハードウェアエラーが発生している
         id_data_vec_map[id].resize(dp_list.size());
-        for (int i_dp=0; i_dp<dp_list.size(); i_dp++) {
+        for (size_t i_dp=0; i_dp<dp_list.size(); i_dp++) {
             const DynamixelAddress& dp = dp_list[i_dp];
             uint8_t index = dp.address() - dp_min.address();
-            for(int i=0; i<dp.size(); i++) data_read_[i] = read_data[9+index+i];
+            for(size_t i=0; i<dp.size(); i++) data_read_[i] = read_data[9+index+i];
             id_data_vec_map[id][i_dp] = DecodeDataRead(dp.data_type());
         }
     }
@@ -1099,11 +1099,11 @@ map<uint8_t, vector<int64_t>> DynamixelCommunicator::SyncRead_fast(const vector<
 
 	// パケットの読み込み
     uint8_t read_data[1458]; // 読み込むサーボとデータサイズによって変わるが， 最大でも同時読み込みしたいアドレスの幅は25程度なので，(25+4)*50+8=1458;
-    uint8_t read_length = port_handler_->readPort(read_data, length_read_data);
+    int8_t read_length = port_handler_->readPort(read_data, length_read_data);
 
-    // if(varbose_) {printf("write:" ); for (int i=0; i<14+num_servo; i++) printf("%02X ", send_data[i]); printf("\n");}
+    // if(varbose_) {printf("write:" ); for (size_t i=0; i<14+num_servo; i++) printf("%02X ", send_data[i]); printf("\n");}
 
-    // if(varbose_) {printf("read:" ); for (int i=0; i<read_length; i++) printf("%02X ", read_data[i]); printf("\n");}
+    // if(varbose_) {printf("read:" ); for (size_t i=0; i<read_length; i++) printf("%02X ", read_data[i]); printf("\n");}
 
     // 全体のエラーチェック
     comm_error_last_read_ = false;
@@ -1146,10 +1146,10 @@ map<uint8_t, vector<int64_t>> DynamixelCommunicator::SyncRead_fast(const vector<
 		// 正常なデータ, hardware error は通信の可否に影響はないので以降でチェックする．
         if( error & 0x80 ) hardware_error_last_read_ = true; // error の最上位ビットが1のとき，ハードウェアエラーが発生している
         id_data_vec_map[id].resize(dp_list.size(), 0);
-        for (int i_dp=0; i_dp<dp_list.size(); i_dp++) {
+        for (size_t i_dp=0; i_dp<dp_list.size(); i_dp++) {
             const DynamixelAddress& dp = dp_list[i_dp];
             uint8_t index = dp.address() - dp_min.address();
-            for(int i=0; i<dp.size(); i++) data_read_[i] = read_data[10+i_servo*length_a_servo+index+i];
+            for(size_t i=0; i<dp.size(); i++) data_read_[i] = read_data[10+i_servo*length_a_servo+index+i];
             id_data_vec_map[id][i_dp] = DecodeDataRead(dp.data_type());
         }
 	}
@@ -1184,7 +1184,7 @@ bool DynamixelCommunicator::SyncWrite(const vector<DynamixelAddress>& dp_list_so
   DynamixelAddress dp_min = *dp_list_sorted.begin();
   DynamixelAddress dp_max = *dp_list_sorted.rbegin();
   // アドレスが連続しているか確認
-  for (int i=0; i<dp_list_sorted.size()-1; i++) {
+  for (size_t i=0; i<dp_list_sorted.size()-1; i++) {
     if (dp_list_sorted[i].address() + dp_list_sorted[i].size() != dp_list_sorted[i+1].address()) {
     if(varbose_) printf("Sync Write Error(address is not continuous):");
     return false;
@@ -1208,7 +1208,7 @@ bool DynamixelCommunicator::SyncWrite(const vector<DynamixelAddress>& dp_list_so
   send_data[11] = (size_total_dp>>8) & 0xFF;
   for(int i_servo=0; i_servo<num_servo; i_servo++) {
     send_data[12+i_servo*(size_total_dp+1)] = servo_id_list[i_servo];
-    for (int i_dp=0; i_dp<dp_list_sorted.size(); i_dp++) {
+    for (size_t i_dp=0; i_dp<dp_list_sorted.size(); i_dp++) {
       const DynamixelAddress& dp = dp_list_sorted[i_dp];
       uint8_t index = dp.address() - dp_min.address();
       EncodeDataWrite(dp.data_type(), data_vec_list[i_servo][i_dp]);
