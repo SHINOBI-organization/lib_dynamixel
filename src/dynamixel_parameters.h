@@ -229,7 +229,7 @@ class DynamixelAddress {
 };
 
 // dynamixel common
-struct DynCommon {
+struct AddrCommon {
     static inline DynamixelAddress model_number      {  0, TYPE_UINT16};
     static inline DynamixelAddress id                {  7, TYPE_UINT8 };
     static inline DynamixelAddress baudrate          {  8, TYPE_UINT8 };
@@ -240,7 +240,8 @@ struct DynCommon {
 };
 
 // dynamixel X series   
-struct DynX : DynCommon{
+struct AddrX : AddrCommon{
+    static inline DynamixelSeries series() { return SERIES_X;}
     static inline DynamixelAddress homing_offset         { 20, TYPE_INT32 , UNIT_POSITION};
     static inline DynamixelAddress moving_threshold      { 24, TYPE_UINT32, UNIT_VELOCITY}; 
     static inline DynamixelAddress temperature_limit     { 31, TYPE_UINT8 , UNIT_TEMPERATURE};
@@ -292,7 +293,8 @@ struct DynX : DynCommon{
 };// 以後Indirect Address, うまく実装して取り込みたい．
 
 // dynamixel P series (old: pro plus)
-struct DynP : DynCommon {
+struct AddrP : AddrCommon {
+    static inline DynamixelSeries series() { return SERIES_P;}
     static inline DynamixelAddress homing_offset         { 20, TYPE_INT32 , UNIT_POSITION};
     static inline DynamixelAddress moving_threshold      { 24, TYPE_UINT32, UNIT_VELOCITY};
     static inline DynamixelAddress temperature_limit     { 31, TYPE_UINT8 , UNIT_TEMPERATURE};
