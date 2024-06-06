@@ -266,8 +266,8 @@ struct DynX : DynCommon{
     static inline DynamixelAddress position_d_gain       { 80, TYPE_UINT16}; // 型番によってデフォルト値が異なる
     static inline DynamixelAddress position_i_gain       { 82, TYPE_UINT16}; // 型番によってデフォルト値が異なる
     static inline DynamixelAddress position_p_gain       { 84, TYPE_UINT16}; // 型番によってデフォルト値が異なる
-    static inline DynamixelAddress feedforward_acc_gain  { 88, TYPE_UINT16};
-    static inline DynamixelAddress feedforward_vel_gain  { 90, TYPE_UINT16};
+    static inline DynamixelAddress feedforward_2nd_gain  { 88, TYPE_UINT16};
+    static inline DynamixelAddress feedforward_1st_gain  { 90, TYPE_UINT16};
     static inline DynamixelAddress bus_watchdog          { 98, TYPE_INT8  , UNIT_BUS_WATCHDOG};
     static inline DynamixelAddress goal_pwm              {100, TYPE_INT16 , UNIT_PWM};
     static inline DynamixelAddress goal_current          {102, TYPE_INT16 , UNIT_CURRENT};
@@ -321,6 +321,8 @@ struct DynP : DynCommon {
     static inline DynamixelAddress position_d_gain       {528, TYPE_UINT16};
     static inline DynamixelAddress position_i_gain       {530, TYPE_UINT16};
     static inline DynamixelAddress position_p_gain       {532, TYPE_UINT16};
+    static inline DynamixelAddress feedforward_2nd_gain  {536, TYPE_UINT16};
+    static inline DynamixelAddress feedforward_1st_gain  {538, TYPE_UINT16};
     static inline DynamixelAddress bus_watchdog          {546, TYPE_UINT8 , UNIT_BUS_WATCHDOG};
     static inline DynamixelAddress goal_pwm              {548, TYPE_INT16 , UNIT_PWM};
     static inline DynamixelAddress goal_current          {550, TYPE_INT16 , UNIT_CURRENT};
