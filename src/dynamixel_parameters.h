@@ -223,7 +223,7 @@ class DynamixelAddress {
     else/*dynamixel_series(model_num) == SERIES_X*/ return 0.229/*rev/min*/ / 60.0 * (2*M_PI); // Xシリーズがデフォルト値
   }
   double acc_factor(uint16_t model_num) const {
-    if (  dynamixel_series(model_num) == SERIES_P ) return 58000.0/*rev/min^2*// 60.0 / 60.0 * (2*M_PI);
+    if (  dynamixel_series(model_num) == SERIES_P ) return 1.0    /*rev/min^2*// 60.0 / 60.0 * (2*M_PI);
     else/*dynamixel_series(model_num) == SERIES_X*/ return 214.577/*rev/min^2*// 60.0 / 60.0 * (2*M_PI); // Xシリーズがデフォルト値
   }
 };
