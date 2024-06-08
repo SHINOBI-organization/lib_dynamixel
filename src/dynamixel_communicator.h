@@ -91,6 +91,7 @@ class DynamixelCommunicator {
         bool varbose_ = false;
         uint8_t num_try_       = 5;
         uint8_t msec_interval_ = 5;
+        int32_t deficient_byte_ = 0;
 };
 
 #endif /* DYNAMIXEL_COMMUNICATOR_H_ */

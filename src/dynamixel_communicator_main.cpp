@@ -422,6 +422,13 @@ int64_t DynamixelCommunicator::Read(DynamixelAddress dp, uint8_t servo_id) {
     send_data[12] = sum & 0xFF;
     send_data[13] = (sum>>8) & 0xFF;
 
+    port_handler_->setPacketTimeout( uint16_t(deficient_byte_) );
+    while( timeout_last_read_ && port_handler_->getBytesAvailable() < deficient_byte_) {
+        if (port_handler_->isPacketTimeout()) { 
+            if(varbose_) printf("Read Warn: clear buffer time out\n");
+            break;
+        }
+    }
     port_handler_->clearPort();
     port_handler_->writePort(send_data, 14);
 
@@ -431,9 +438,10 @@ int64_t DynamixelCommunicator::Read(DynamixelAddress dp, uint8_t servo_id) {
     port_handler_->setPacketTimeout( uint16_t(11+dp.size()) );
     while(port_handler_->getBytesAvailable() < 11+dp.size()) {
         if (port_handler_->isPacketTimeout()) {
-        if(varbose_) printf("Read Error(time out): ID %d, available bytes %d\n", (int)servo_id, port_handler_->getBytesAvailable());
-        timeout_last_read_ = true;
-        return 0;
+            if(varbose_) printf("Read Error(time out): ID %d, available bytes %d / %d\n", (int)servo_id, port_handler_->getBytesAvailable(), (int)(11+dp.size()));
+            deficient_byte_ = 11+dp.size() - port_handler_->getBytesAvailable();
+            timeout_last_read_ = true;
+            return 0;
         }
     }
 
@@ -571,6 +579,13 @@ map<uint8_t, int64_t> DynamixelCommunicator::SyncRead( DynamixelAddress dp, cons
     send_data[12+num_servo] = sum & 0xFF;
     send_data[13+num_servo] = (sum>>8) & 0xFF;
 
+    port_handler_->setPacketTimeout( uint16_t(deficient_byte_) );
+    while( timeout_last_read_ && port_handler_->getBytesAvailable() < deficient_byte_) {
+        if (port_handler_->isPacketTimeout()) { 
+            if(varbose_) printf("Sync Read Warn: clear buffer time out\n");
+            break;
+        }
+    }
     port_handler_->clearPort();
     port_handler_->writePort(send_data, 14+num_servo);
 
@@ -584,7 +599,8 @@ map<uint8_t, int64_t> DynamixelCommunicator::SyncRead( DynamixelAddress dp, cons
         port_handler_->setPacketTimeout( uint16_t(11+dp.size()) );
         while(port_handler_->getBytesAvailable() < 11+dp.size()) {
         if (port_handler_->isPacketTimeout()) {
-            if(varbose_) printf("Sync Read Error(time out): ID %d, available bytes %d / %d\n", servo_id_list[i_servo], port_handler_->getBytesAvailable(), 11+dp.size());
+            if(varbose_) printf("Sync Read Error(time out): ID %d, available bytes %d / %d\n", servo_id_list[i_servo], port_handler_->getBytesAvailable(), (int)(11+dp.size()));
+            deficient_byte_ = 11+dp.size() - port_handler_->getBytesAvailable();
             timeout_last_read_ = true;
             return id_data_int_map; // これ以降すべての読み込みを諦める．
         }
@@ -668,6 +684,13 @@ map<uint8_t, int64_t> DynamixelCommunicator::SyncRead_fast(DynamixelAddress dp, 
 	send_data[12+num_servo] = sum & 0xFF;
 	send_data[13+num_servo] = (sum>>8) & 0xFF;
 
+    port_handler_->setPacketTimeout( uint16_t(deficient_byte_) );
+    while( timeout_last_read_ && port_handler_->getBytesAvailable() < deficient_byte_) {
+        if (port_handler_->isPacketTimeout()) { 
+            if(varbose_) printf("Sync Read fast Warn: clear buffer time out\n");
+            break;
+        }
+    }
 	port_handler_->clearPort();
 	port_handler_->writePort(send_data, 14+num_servo);
 
@@ -679,6 +702,7 @@ map<uint8_t, int64_t> DynamixelCommunicator::SyncRead_fast(DynamixelAddress dp, 
     while(port_handler_->getBytesAvailable() < length_read_data) {
 		if (port_handler_->isPacketTimeout()) {
             if(varbose_) printf("Fast Sync Read Error(time out) : available bytes %d / %d\n", port_handler_->getBytesAvailable(), length_read_data);
+            deficient_byte_ = length_read_data - port_handler_->getBytesAvailable();
             timeout_last_read_ = true;
             return map<uint8_t, int64_t>();
 		}
@@ -865,6 +889,13 @@ vector<int64_t> DynamixelCommunicator::Read(const vector<DynamixelAddress>& dp_l
     send_data[12] = sum & 0xFF;
     send_data[13] = (sum>>8) & 0xFF;
 
+    port_handler_->setPacketTimeout( uint16_t(deficient_byte_) );
+    while( timeout_last_read_ && port_handler_->getBytesAvailable() < deficient_byte_) {
+        if (port_handler_->isPacketTimeout()) { 
+            if(varbose_) printf("Read Warn: clear buffer time out\n");
+            break;
+        }
+    }
     port_handler_->clearPort();
     port_handler_->writePort(send_data, 14);
 
@@ -875,7 +906,8 @@ vector<int64_t> DynamixelCommunicator::Read(const vector<DynamixelAddress>& dp_l
     port_handler_->setPacketTimeout( uint16_t(11+size_total_dp) );
     while(port_handler_->getBytesAvailable() < 11+size_total_dp) {
         if (port_handler_->isPacketTimeout()) {
-        if(varbose_) printf("Read Error(time out): ID %d, available bytes %d\n", servo_id, port_handler_->getBytesAvailable());
+        if(varbose_) printf("Read Error(time out): ID %d, available bytes %d / %d\n", servo_id, port_handler_->getBytesAvailable(), 11+size_total_dp);
+        deficient_byte_ = 11+size_total_dp - port_handler_->getBytesAvailable();
         timeout_last_read_ = true;
         return vector<int64_t>(dp_list.size(), 0); // これ以降すべての読み込みを諦める．
         }
@@ -976,6 +1008,13 @@ map<uint8_t, vector<int64_t>> DynamixelCommunicator::SyncRead(const vector<Dynam
     send_data[12+num_servo] = sum & 0xFF;
     send_data[13+num_servo] = (sum>>8) & 0xFF;
 
+    port_handler_->setPacketTimeout( uint16_t(deficient_byte_) );
+    while( timeout_last_read_ && port_handler_->getBytesAvailable() < deficient_byte_) {
+        if (port_handler_->isPacketTimeout()) { 
+            if(varbose_) printf("Sync Read Warn: clear buffer time out\n");
+            break;
+        }
+    }
     port_handler_->clearPort();
     port_handler_->writePort(send_data, 14+num_servo);
 
@@ -990,11 +1029,12 @@ map<uint8_t, vector<int64_t>> DynamixelCommunicator::SyncRead(const vector<Dynam
         timeout_last_read_ = false;
         port_handler_->setPacketTimeout( uint16_t(11+size_total_dp) );
         while(port_handler_->getBytesAvailable() < 11+size_total_dp) {
-        if (port_handler_->isPacketTimeout()) {
-            if(varbose_) printf("Sync Read Error(time out): ID %d, available bytes %d / %d\n", servo_id_list[i_servo], port_handler_->getBytesAvailable(), 11+size_total_dp);
-            timeout_last_read_ = true;
-            return id_data_vec_map; // これ以降すべての読み込みを諦める．
-        }
+            if (port_handler_->isPacketTimeout()) {
+                if(varbose_) printf("Sync Read Error(time out): ID %d, available bytes %d / %d\n", servo_id_list[i_servo], port_handler_->getBytesAvailable(), 11+size_total_dp);
+                deficient_byte_ = 11+size_total_dp - port_handler_->getBytesAvailable();
+                timeout_last_read_ = true;
+                return id_data_vec_map; // これ以降すべての読み込みを諦める．
+            }
         }
 
         int8_t read_length = port_handler_->readPort(read_data, 11+size_total_dp);
@@ -1091,6 +1131,13 @@ map<uint8_t, vector<int64_t>> DynamixelCommunicator::SyncRead_fast(const vector<
 	send_data[12+num_servo] = sum & 0xFF;
 	send_data[13+num_servo] = (sum>>8) & 0xFF;
 
+    port_handler_->setPacketTimeout( uint16_t(deficient_byte_) );
+    while( timeout_last_read_ && port_handler_->getBytesAvailable() < deficient_byte_) {
+        if (port_handler_->isPacketTimeout()) { 
+            if(varbose_) printf("Sync Read fast Warn: clear buffer time out\n");
+            break;
+        }
+    }
 	port_handler_->clearPort();
 	port_handler_->writePort(send_data, 14+num_servo);
 
@@ -1100,8 +1147,9 @@ map<uint8_t, vector<int64_t>> DynamixelCommunicator::SyncRead_fast(const vector<
     timeout_last_read_ = false;
 	port_handler_->setPacketTimeout( uint16_t(length_read_data) );
 	while(port_handler_->getBytesAvailable() < length_read_data) {
-		if (port_handler_->isPacketTimeout()) {
+		if (port_handler_->isPacketTimeout() ) {
 		if(varbose_) printf("Fast Sync Read Error(time out) : available bytes %d / %d\n", port_handler_->getBytesAvailable(), length_read_data);
+        deficient_byte_ = length_read_data - port_handler_->getBytesAvailable();
 		timeout_last_read_ = true;
 		return map<uint8_t, vector<int64_t>>();
 		}
