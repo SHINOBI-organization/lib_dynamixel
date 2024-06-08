@@ -302,8 +302,8 @@ struct AddrP : AddrCommon {
     static inline DynamixelAddress min_voltage_limit     { 34, TYPE_UINT16, UNIT_VOLTAGE};
     static inline DynamixelAddress pwm_limit             { 36, TYPE_UINT16, UNIT_PWM};
     static inline DynamixelAddress current_limit         { 38, TYPE_UINT16, UNIT_CURRENT};
-    static inline DynamixelAddress acceleration_limit    { 38, TYPE_UINT32, UNIT_ACCELERATION};
-    static inline DynamixelAddress velocity_limit        { 38, TYPE_UINT32, UNIT_VELOCITY};
+    static inline DynamixelAddress acceleration_limit    { 40, TYPE_UINT32, UNIT_ACCELERATION};
+    static inline DynamixelAddress velocity_limit        { 44, TYPE_UINT32, UNIT_VELOCITY};
     static inline DynamixelAddress max_position_limit    { 48, TYPE_INT32 , UNIT_POSITION};
     static inline DynamixelAddress min_position_limit    { 52, TYPE_INT32 , UNIT_POSITION};
     static inline DynamixelAddress external_port_mode_1  { 56, TYPE_UINT8 };
