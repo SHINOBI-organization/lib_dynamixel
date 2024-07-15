@@ -82,10 +82,10 @@ enum DynamixelOperatingMode {
   OPERATING_MODE_PWM                   = 16,
 };
 enum DynamixelExternalPortMode {
-  EXTERNAL_PORT_MODE_AIN           = 0,
-  EXTERNAL_PORT_MODE_DOUT_NOPULL   = 1,
-  EXTERNAL_PORT_MODE_DOUT_PULLUP   = 2,
-  EXTERNAL_PORT_MODE_DOUT_PULLDOWN = 3,
+  EXTERNAL_PORT_MODE_AIN          = 0,
+  EXTERNAL_PORT_MODE_DOUT         = 1,
+  EXTERNAL_PORT_MODE_DIN_PULLUP   = 2,
+  EXTERNAL_PORT_MODE_DIN_PULLDOWN = 3,
 };
 enum DynamixelTorquePermission {
   TORQUE_DISABLE = 0,
