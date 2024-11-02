@@ -642,6 +642,9 @@ map<uint8_t, int64_t> DynamixelCommunicator::SyncRead( DynamixelAddress dp, cons
             continue;
         }
 
+        // if(varbose_) {printf("read:" ); for (size_t i=0; i<read_length; i++) printf("%02X ", read_data[i]); printf("\n");}
+
+
     // 正常なデータ, hardware error は通信の可否に影響はないので以降でチェックする．
         if ( error & 0x80 ) hardware_error_last_read_ = true; // error の最上位ビットが1のとき，ハードウェアエラーが発生している
         for(size_t i=0; i<dp.size(); i++) data_read_[i] = read_data[9+i];
