@@ -242,7 +242,7 @@ void DynamixelCommunicator::Reboot(uint8_t servo_id) {
   port_handler_->setPacketTimeout( uint16_t(11) );
   while(port_handler_->getBytesAvailable() < 11) {
     if (port_handler_->isPacketTimeout()) {
-      if(varbose_) printf("Reboot Error(time out): ID %d, available bytes %d\n", servo_id, port_handler_->getBytesAvailable());
+      if(verbose_) printf("Reboot Error(time out): ID %d, available bytes %d\n", servo_id, port_handler_->getBytesAvailable());
       timeout_last_read_ = true;
       return;
     }
@@ -306,20 +306,20 @@ bool DynamixelCommunicator::Ping(uint8_t servo_id) {
   port_handler_->setPacketTimeout( uint16_t(14) );
   while(port_handler_->getBytesAvailable() < 14) 
     if (port_handler_->isPacketTimeout()) {
-        if(varbose_) printf("Ping Error(time out): ID %d, available bytes %d\n", servo_id, port_handler_->getBytesAvailable());
+        if(verbose_) printf("Ping Error(time out): ID %d, available bytes %d\n", servo_id, port_handler_->getBytesAvailable());
         return false;
     }
 
   uint8_t read_data[14];
   uint8_t read_length = port_handler_->readPort(read_data, 14);
     if (read_length != 14) {
-        if(varbose_) printf("Ping Error(no data): ID %d, data_length = %d\n", servo_id, read_length);
+        if(verbose_) printf("Ping Error(no data): ID %d, data_length = %d\n", servo_id, read_length);
         return false;
     }
   if( read_data[4] == servo_id) {
     return true;
   } else {
-    if (varbose_) printf("Ping Error(header or id): expected ID %d, return ID %d\n", servo_id, read_data[4]);
+    if (verbose_) printf("Ping Error(header or id): expected ID %d, return ID %d\n", servo_id, read_data[4]);
     return false;
   }
 }
@@ -361,7 +361,7 @@ bool DynamixelCommunicator::Write(DynamixelAddress dp, uint8_t servo_id, int64_t
     port_handler_->setPacketTimeout( uint16_t(11) );
     while(port_handler_->getBytesAvailable() < 11) {
         if (port_handler_->isPacketTimeout()) {
-        if(varbose_) printf("Write Error(return status time out): ID %d, available bytes %d/11\n", (int)servo_id, port_handler_->getBytesAvailable());
+        if(verbose_) printf("Write Error(return status time out): ID %d, available bytes %d/11\n", (int)servo_id, port_handler_->getBytesAvailable());
         timeout_last_read_ = true;
         return false;
         }
@@ -375,20 +375,20 @@ bool DynamixelCommunicator::Write(DynamixelAddress dp, uint8_t servo_id, int64_t
         read_data[2] != HEADER[2] or
         read_data[3] != HEADER[3] or
         read_data[4] != servo_id) {
-        if(varbose_) printf("Write Error(return status header or id): ID %d\n", (int)servo_id);
+        if(verbose_) printf("Write Error(return status header or id): ID %d\n", (int)servo_id);
         comm_error_last_read_ = true;
         return false;
     }
     uint8_t error = (uint8_t)read_data[8];
     if ( error & 0x7F ) { // error の最上位ビット以外が1のとき，通信状態の異常がある
-        if(varbose_) printf("Write Error(return status packet error) : ID %d\n", (int)servo_id);
+        if(verbose_) printf("Write Error(return status packet error) : ID %d\n", (int)servo_id);
         comm_error_last_read_ = true;
         return false;
     } 
     uint16_t sum_est = CalcChecksum(read_data, 9);
     uint16_t sum_read = uint16_t(read_data[9]) | uint16_t(read_data[9+1])<<8;
     if (sum_est != sum_read) {
-        if(varbose_) printf("Write Error(return status crc): ID %d, est=%d, read=%d\n", (int)servo_id, sum_est, sum_read);
+        if(verbose_) printf("Write Error(return status crc): ID %d, est=%d, read=%d\n", (int)servo_id, sum_est, sum_read);
         comm_error_last_read_ = true;
         return false;
     }
@@ -425,7 +425,7 @@ int64_t DynamixelCommunicator::Read(DynamixelAddress dp, uint8_t servo_id) {
     port_handler_->setPacketTimeout( uint16_t(deficient_byte_) );
     while( timeout_last_read_ && port_handler_->getBytesAvailable() < deficient_byte_) {
         if (port_handler_->isPacketTimeout()) { 
-            if(varbose_) printf("Read Warn: clear buffer time out\n");
+            if(verbose_) printf("Read Warn: clear buffer time out\n");
             break;
         }
     }
@@ -438,7 +438,7 @@ int64_t DynamixelCommunicator::Read(DynamixelAddress dp, uint8_t servo_id) {
     port_handler_->setPacketTimeout( uint16_t(11+dp.size()) );
     while(port_handler_->getBytesAvailable() < 11+dp.size()) {
         if (port_handler_->isPacketTimeout()) {
-            if(varbose_) printf("Read Error(time out): ID %d, available bytes %d / %d\n", (int)servo_id, port_handler_->getBytesAvailable(), (int)(11+dp.size()));
+            if(verbose_) printf("Read Error(time out): ID %d, available bytes %d / %d\n", (int)servo_id, port_handler_->getBytesAvailable(), (int)(11+dp.size()));
             deficient_byte_ = 11+dp.size() - port_handler_->getBytesAvailable();
             timeout_last_read_ = true;
             return 0;
@@ -450,7 +450,7 @@ int64_t DynamixelCommunicator::Read(DynamixelAddress dp, uint8_t servo_id) {
     // エラーチェック
     comm_error_last_read_ = false;
     if (read_length != 11+dp.size()) {
-        if(varbose_) printf("Read Error(no data): ID %d, data_length = %d\n", (int)servo_id, read_length);
+        if(verbose_) printf("Read Error(no data): ID %d, data_length = %d\n", (int)servo_id, read_length);
         comm_error_last_read_ = true;
         return 0;
     }
@@ -459,20 +459,20 @@ int64_t DynamixelCommunicator::Read(DynamixelAddress dp, uint8_t servo_id) {
         read_data[2] != HEADER[2] or
         read_data[3] != HEADER[3] or
         read_data[4] != servo_id) {
-        if(varbose_) printf("Read Error(header or id): ID %d\n", (int)servo_id);
+        if(verbose_) printf("Read Error(header or id): ID %d\n", (int)servo_id);
         comm_error_last_read_ = true;
         return 0;
     }
     uint8_t error = (uint8_t)read_data[8];
     if ( error & 0x7F ) { // error の最上位ビット以外が1のとき，通信状態の異常がある
-        if(varbose_) printf("Read Error(packet error) : ID %d\n", (int)servo_id);
+        if(verbose_) printf("Read Error(packet error) : ID %d\n", (int)servo_id);
         comm_error_last_read_ = true;
         return 0;
     } 
     uint16_t sum_est = CalcChecksum(read_data, 9+dp.size());
     uint16_t sum_read = uint16_t(read_data[9+dp.size()]) | uint16_t(read_data[9+dp.size()+1])<<8;
     if (sum_est != sum_read) {
-        if(varbose_) printf("Read Error(crc): ID %d, est=%d, read=%d\n", (int)servo_id, sum_est, sum_read);
+        if(verbose_) printf("Read Error(crc): ID %d, est=%d, read=%d\n", (int)servo_id, sum_est, sum_read);
         comm_error_last_read_ = true;
         return 0;
     }
@@ -492,11 +492,11 @@ int64_t DynamixelCommunicator::Read(DynamixelAddress dp, uint8_t servo_id) {
  */
 bool DynamixelCommunicator::SyncWrite(DynamixelAddress dp,  const vector<uint8_t>& servo_id_list, const vector<int64_t>& data_int_list) {
   if (servo_id_list.size() > 100) {
-    if(varbose_) printf("Sync Write Error(too many servo): servo num=%d > 100\n", (int)servo_id_list.size());
+    if(verbose_) printf("Sync Write Error(too many servo): servo num=%d > 100\n", (int)servo_id_list.size());
     return false;
   }
   if (servo_id_list.size() != data_int_list.size()) {
-    if(varbose_) printf("Sync Write Error(mismatch servo and data num): servo num=%d, data num=%d\n", (int)servo_id_list.size(), (int)data_int_list.size());
+    if(verbose_) printf("Sync Write Error(mismatch servo and data num): servo num=%d, data num=%d\n", (int)servo_id_list.size(), (int)data_int_list.size());
     return false;
   }
   uint8_t send_data[514] = {0}; // 書き込むサーボの数によって変わるが， dp.size()は最大4 (4+1)*100+14=514 100サーボに同時に4バイト書き込むことはないので十分
@@ -554,7 +554,7 @@ bool DynamixelCommunicator::SyncWrite(DynamixelAddress dp, const map<uint8_t, in
  */
 map<uint8_t, int64_t> DynamixelCommunicator::SyncRead( DynamixelAddress dp, const vector<uint8_t>& servo_id_list) {
     if (servo_id_list.size() > 100) {
-        if(varbose_) printf("Sync Read Error(too many servo): servo num=%d > 100\n", (int)servo_id_list.size());
+        if(verbose_) printf("Sync Read Error(too many servo): servo num=%d > 100\n", (int)servo_id_list.size());
         return map<uint8_t, int64_t>();
     }
     uint8_t send_data[114] = {0}; // 読み込むサーボの数によって変わるが， 100+14=114 100サーボに同時に読み込むことはないので十分
@@ -582,7 +582,7 @@ map<uint8_t, int64_t> DynamixelCommunicator::SyncRead( DynamixelAddress dp, cons
     port_handler_->setPacketTimeout( uint16_t(deficient_byte_) );
     while( timeout_last_read_ && port_handler_->getBytesAvailable() < deficient_byte_) {
         if (port_handler_->isPacketTimeout()) { 
-            if(varbose_) printf("Sync Read Warn: clear buffer time out\n");
+            if(verbose_) printf("Sync Read Warn: clear buffer time out\n");
             break;
         }
     }
@@ -599,7 +599,7 @@ map<uint8_t, int64_t> DynamixelCommunicator::SyncRead( DynamixelAddress dp, cons
         port_handler_->setPacketTimeout( uint16_t(11+dp.size()) );
         while(port_handler_->getBytesAvailable() < 11+dp.size()) {
         if (port_handler_->isPacketTimeout()) {
-            if(varbose_) printf("Sync Read Error(time out): ID %d, available bytes %d / %d\n", servo_id_list[i_servo], port_handler_->getBytesAvailable(), (int)(11+dp.size()));
+            if(verbose_) printf("Sync Read Error(time out): ID %d, available bytes %d / %d\n", servo_id_list[i_servo], port_handler_->getBytesAvailable(), (int)(11+dp.size()));
             deficient_byte_ = 11+dp.size() - port_handler_->getBytesAvailable();
             timeout_last_read_ = true;
             return id_data_int_map; // これ以降すべての読み込みを諦める．
@@ -610,7 +610,7 @@ map<uint8_t, int64_t> DynamixelCommunicator::SyncRead( DynamixelAddress dp, cons
 
         //  エラーチェック
         if (read_length == -1) {
-            if(varbose_) printf("Sync Read Error(read port) : ID %d\n", servo_id_list[i_servo]);
+            if(verbose_) printf("Sync Read Error(read port) : ID %d\n", servo_id_list[i_servo]);
             comm_error_last_read_ = true;
             continue;
         }
@@ -618,34 +618,33 @@ map<uint8_t, int64_t> DynamixelCommunicator::SyncRead( DynamixelAddress dp, cons
             read_data[1] != HEADER[1] or
             read_data[2] != HEADER[2] or
             read_data[3] != HEADER[3]) {
-            if(varbose_) printf("Sync Read Error(header): ID %d\n", servo_id_list[i_servo]);
+            if(verbose_) printf("Sync Read Error(header): ID %d\n", servo_id_list[i_servo]);
             comm_error_last_read_ = true;
             continue;
         }
         uint8_t id = read_data[4];
         if ( id != servo_id_list[i_servo] ) {
-            if(varbose_) printf("Sync Read Error(packet id) : est ID=%d, read ID=%d\n", servo_id_list[i_servo], id);
+            if(verbose_) printf("Sync Read Error(packet id) : est ID=%d, read ID=%d\n", servo_id_list[i_servo], id);
             comm_error_last_read_ = true;
             continue;
         }
         uint8_t error = (uint8_t)read_data[8];
         if ( error & 0x7F ) { // error の最上位ビット以外が1のとき，通信状態の異常がある
-            if(varbose_) printf("Sync Read Error(packet error) : ID %d\n", id);
+            if(verbose_) printf("Sync Read Error(packet error) : ID %d\n", id);
             comm_error_last_read_ = true;
             continue;
         }
         uint16_t sum_est = CalcChecksum(read_data, 9+dp.size());
         uint16_t sum_read = uint16_t(read_data[9+dp.size()]) | uint16_t(read_data[9+dp.size()+1])<<8;
         if (sum_est != sum_read) {
-            if(varbose_) printf("Sync Read Error(crc): ID %d, est=%d, read=%d\n", id, sum_est, sum_read);
+            if(verbose_) printf("Sync Read Error(crc): ID %d, est=%d, read=%d\n", id, sum_est, sum_read);
             comm_error_last_read_ = true;
             continue;
         }
 
-        // if(varbose_) {printf("read:" ); for (size_t i=0; i<read_length; i++) printf("%02X ", read_data[i]); printf("\n");}
+        // if(verbose_) {printf("read:" ); for (size_t i=0; i<read_length; i++) printf("%02X ", read_data[i]); printf("\n");}
 
-
-    // 正常なデータ, hardware error は通信の可否に影響はないので以降でチェックする．
+        // 正常なデータ, hardware error は通信の可否に影響はないので以降でチェックする．
         if ( error & 0x80 ) hardware_error_last_read_ = true; // error の最上位ビットが1のとき，ハードウェアエラーが発生している
         for(size_t i=0; i<dp.size(); i++) data_read_[i] = read_data[9+i];
         id_data_int_map[id] = DecodeDataRead(dp.data_type());
@@ -662,7 +661,7 @@ map<uint8_t, int64_t> DynamixelCommunicator::SyncRead( DynamixelAddress dp, cons
  */
 map<uint8_t, int64_t> DynamixelCommunicator::SyncRead_fast(DynamixelAddress dp, const vector<uint8_t>& servo_id_list) {
     if (servo_id_list.size() > 50) {
-        if(varbose_) printf("Fast Sync Read Error(too many servo): servo num=%d > 50\n", (int)servo_id_list.size());
+        if(verbose_) printf("Fast Sync Read Error(too many servo): servo num=%d > 50\n", (int)servo_id_list.size());
         return map<uint8_t, int64_t>();
     }
 	uint8_t send_data[64] = {0}; // 読み込むサーボの数によって変わるが， 50+14=64 50サーボに同時に読み込むことはないので十分
@@ -690,7 +689,7 @@ map<uint8_t, int64_t> DynamixelCommunicator::SyncRead_fast(DynamixelAddress dp, 
     port_handler_->setPacketTimeout( uint16_t(deficient_byte_) );
     while( timeout_last_read_ && port_handler_->getBytesAvailable() < deficient_byte_) {
         if (port_handler_->isPacketTimeout()) { 
-            if(varbose_) printf("Sync Read fast Warn: clear buffer time out\n");
+            if(verbose_) printf("Sync Read fast Warn: clear buffer time out\n");
             break;
         }
     }
@@ -704,7 +703,7 @@ map<uint8_t, int64_t> DynamixelCommunicator::SyncRead_fast(DynamixelAddress dp, 
     port_handler_->setPacketTimeout( uint16_t(length_read_data) );
     while(port_handler_->getBytesAvailable() < length_read_data) {
 		if (port_handler_->isPacketTimeout()) {
-            if(varbose_) printf("Fast Sync Read Error(time out) : available bytes %d / %d\n", port_handler_->getBytesAvailable(), length_read_data);
+            if(verbose_) printf("Fast Sync Read Error(time out) : available bytes %d / %d\n", port_handler_->getBytesAvailable(), length_read_data);
             deficient_byte_ = length_read_data - port_handler_->getBytesAvailable();
             timeout_last_read_ = true;
             return map<uint8_t, int64_t>();
@@ -717,7 +716,7 @@ map<uint8_t, int64_t> DynamixelCommunicator::SyncRead_fast(DynamixelAddress dp, 
     // 全体のエラーチェック
     comm_error_last_read_ = false;
     if (read_length == -1) {
-		if(varbose_) printf("Fast Sync Read Error(read port)\n");
+		if(verbose_) printf("Fast Sync Read Error(read port)\n");
 		comm_error_last_read_ = true;
 		return map<uint8_t, int64_t>();
 	}
@@ -725,12 +724,12 @@ map<uint8_t, int64_t> DynamixelCommunicator::SyncRead_fast(DynamixelAddress dp, 
 	    read_data[1] != HEADER[1] ||
 	    read_data[2] != HEADER[2] ||
 	    read_data[3] != HEADER[3]) {
-		if(varbose_) printf("Fast Sync Read Error(header)\n");
+		if(verbose_) printf("Fast Sync Read Error(header)\n");
 		comm_error_last_read_ = true;
 		return map<uint8_t, int64_t>();
 	}
 	if ( read_data[4] != 0xFE ) { // 読み込めたパケットのIDがブロードキャスト用のものか確認
-		if(varbose_) printf("Fast Sync Read Error(broad cast id)\n");
+		if(verbose_) printf("Fast Sync Read Error(broad cast id)\n");
 		comm_error_last_read_ = true;
 		return map<uint8_t, int64_t>();
 	}
@@ -740,13 +739,13 @@ map<uint8_t, int64_t> DynamixelCommunicator::SyncRead_fast(DynamixelAddress dp, 
 	for(int i_servo=0; i_servo<num_servo; i_servo++) {
 		uint8_t id = (uint8_t)read_data[9 + i_servo*length_a_servo]; // servo id
         if ( id != servo_id_list[i_servo] ) {
-            if(varbose_) printf("Fast Sync Read Error(packet id) : expected %d return %d\n", servo_id_list[i_servo], id);
+            if(verbose_) printf("Fast Sync Read Error(packet id) : expected %d return %d\n", servo_id_list[i_servo], id);
             comm_error_last_read_ = true;
             return map<uint8_t, int64_t>(); // これ以降すべての読み込みを諦める．
         }
 		uint8_t error = (uint8_t)read_data[8 + i_servo*length_a_servo]; // error
         if ( error & 0x7F ) { // error の最上位ビット以外が1のとき，通信状態の異常がある
-            if(varbose_) printf("Fast Sync Read Error(packet error) : ID %d\n", id);
+            if(verbose_) printf("Fast Sync Read Error(packet error) : ID %d\n", id);
             comm_error_last_read_ = true;
             continue; // 他のidのデータは生きている可能性があるので続行
         }
@@ -767,11 +766,11 @@ map<uint8_t, int64_t> DynamixelCommunicator::SyncRead_fast(DynamixelAddress dp, 
  */
 bool DynamixelCommunicator::Write(const vector<DynamixelAddress>& dp_list_sorted, uint8_t servo_id, const vector<int64_t>& data_int_list) {
     if (dp_list_sorted.size() > 10) {
-        if(varbose_) printf("Write Error(too many param): param num=%d > 10\n", (int)dp_list_sorted.size());
+        if(verbose_) printf("Write Error(too many param): param num=%d > 10\n", (int)dp_list_sorted.size());
         return false;
     }
     if ( dp_list_sorted.size() != data_int_list.size() ) {
-        if(varbose_) printf("Write Error(mismatch param and data num): param num=%d, data num=%d\n", (int)dp_list_sorted.size(), (int)data_int_list.size());
+        if(verbose_) printf("Write Error(mismatch param and data num): param num=%d, data num=%d\n", (int)dp_list_sorted.size(), (int)data_int_list.size());
         return false;
     }
     // 書き込むデータの範囲を決定, ソート済みかつ連続していないとNG
@@ -779,7 +778,7 @@ bool DynamixelCommunicator::Write(const vector<DynamixelAddress>& dp_list_sorted
     DynamixelAddress dp_max = *dp_list_sorted.rbegin();
     for (size_t i=0; i<dp_list_sorted.size()-1; i++) { // アドレスが連続しているか確認
         if (dp_list_sorted[i].address() + dp_list_sorted[i].size() != dp_list_sorted[i+1].address()) {
-            if(varbose_) printf("Write Error(address is not continuous): ID %d\n", servo_id);
+            if(verbose_) printf("Write Error(address is not continuous): ID %d\n", servo_id);
             return false;
         }
     }
@@ -818,7 +817,7 @@ bool DynamixelCommunicator::Write(const vector<DynamixelAddress>& dp_list_sorted
     port_handler_->setPacketTimeout( uint16_t(11) );
     while(port_handler_->getBytesAvailable() < 11) {
         if (port_handler_->isPacketTimeout()) {
-            if(varbose_) printf("Write Error(return status time out): ID %d, available bytes %d/11\n", servo_id, port_handler_->getBytesAvailable());
+            if(verbose_) printf("Write Error(return status time out): ID %d, available bytes %d/11\n", servo_id, port_handler_->getBytesAvailable());
             timeout_last_read_ = true;
             return false;
         }
@@ -832,20 +831,20 @@ bool DynamixelCommunicator::Write(const vector<DynamixelAddress>& dp_list_sorted
         read_data[2] != HEADER[2] or
         read_data[3] != HEADER[3] or
         read_data[4] != servo_id) {
-        if(varbose_) printf("Write Error(return status header or id): ID %d\n", servo_id);
+        if(verbose_) printf("Write Error(return status header or id): ID %d\n", servo_id);
         comm_error_last_read_ = true;
         return false;
     }
     uint8_t error = (uint8_t)read_data[8]; // error
     if ( error & 0x7F ) { // error の最上位ビット以外が1のとき，通信状態の異常がある
-        if(varbose_) printf("Write Error(return status packet error): ID %d\n", (int)servo_id);
+        if(verbose_) printf("Write Error(return status packet error): ID %d\n", (int)servo_id);
         comm_error_last_read_ = true;
         return false;
     }
     uint16_t sum_est = CalcChecksum(read_data, 9);
     uint16_t sum_read = uint16_t(read_data[9]) | uint16_t(read_data[9+1])<<8;
     if (sum_est != sum_read) {
-        if(varbose_) printf("Write Error(return status crc): ID %d, est=%d, read=%d\n", servo_id, sum_est, sum_read);
+        if(verbose_) printf("Write Error(return status crc): ID %d, est=%d, read=%d\n", servo_id, sum_est, sum_read);
         comm_error_last_read_ = true;
         return false;
     }
@@ -863,7 +862,7 @@ bool DynamixelCommunicator::Write(const vector<DynamixelAddress>& dp_list_sorted
  */
 vector<int64_t> DynamixelCommunicator::Read(const vector<DynamixelAddress>& dp_list, uint8_t servo_id) {
     if (dp_list.size() > 10) {
-        if(varbose_) printf("Read Error(too many param): ID %d, param num=%d > 10\n", (int)servo_id, (int)dp_list.size());
+        if(verbose_) printf("Read Error(too many param): ID %d, param num=%d > 10\n", (int)servo_id, (int)dp_list.size());
         return vector<int64_t>();
     }
     // 読み込むデータの範囲を決定, 連続していなくても許容
@@ -895,7 +894,7 @@ vector<int64_t> DynamixelCommunicator::Read(const vector<DynamixelAddress>& dp_l
     port_handler_->setPacketTimeout( uint16_t(deficient_byte_) );
     while( timeout_last_read_ && port_handler_->getBytesAvailable() < deficient_byte_) {
         if (port_handler_->isPacketTimeout()) { 
-            if(varbose_) printf("Read Warn: clear buffer time out\n");
+            if(verbose_) printf("Read Warn: clear buffer time out\n");
             break;
         }
     }
@@ -909,7 +908,7 @@ vector<int64_t> DynamixelCommunicator::Read(const vector<DynamixelAddress>& dp_l
     port_handler_->setPacketTimeout( uint16_t(11+size_total_dp) );
     while(port_handler_->getBytesAvailable() < 11+size_total_dp) {
         if (port_handler_->isPacketTimeout()) {
-        if(varbose_) printf("Read Error(time out): ID %d, available bytes %d / %d\n", servo_id, port_handler_->getBytesAvailable(), 11+size_total_dp);
+        if(verbose_) printf("Read Error(time out): ID %d, available bytes %d / %d\n", servo_id, port_handler_->getBytesAvailable(), 11+size_total_dp);
         deficient_byte_ = 11+size_total_dp - port_handler_->getBytesAvailable();
         timeout_last_read_ = true;
         return vector<int64_t>(dp_list.size(), 0); // これ以降すべての読み込みを諦める．
@@ -921,7 +920,7 @@ vector<int64_t> DynamixelCommunicator::Read(const vector<DynamixelAddress>& dp_l
     // エラーチェック
     comm_error_last_read_ = false;
     if (read_length != 11+size_total_dp) {
-        if(varbose_) printf("Read Error(no data): ID %d, data_length = %d\n", servo_id, read_length);
+        if(verbose_) printf("Read Error(no data): ID %d, data_length = %d\n", servo_id, read_length);
         comm_error_last_read_ = true;
         return vector<int64_t>(dp_list.size(), 0);
     }
@@ -929,26 +928,26 @@ vector<int64_t> DynamixelCommunicator::Read(const vector<DynamixelAddress>& dp_l
         read_data[1] != HEADER[1] or
         read_data[2] != HEADER[2] or
         read_data[3] != HEADER[3]) {
-        if(varbose_) printf("Read Error(header): ID %d\n", servo_id);
+        if(verbose_) printf("Read Error(header): ID %d\n", servo_id);
         comm_error_last_read_ = true;
         return vector<int64_t>(dp_list.size(), 0);
     }
     uint8_t id = read_data[4];
     if ( id != servo_id ) {
-        if(varbose_) printf("Read Error(packet id) : ID %d\n", id);
+        if(verbose_) printf("Read Error(packet id) : ID %d\n", id);
         comm_error_last_read_ = true;
         return vector<int64_t>(dp_list.size(), 0);
     }
     uint8_t error = (uint8_t)read_data[8];
     if ( error & 0x7F ) { // error の最上位ビット以外が1のとき，通信状態の異常がある
-        if(varbose_) printf("Read Error(packet error) : ID %d\n", id);
+        if(verbose_) printf("Read Error(packet error) : ID %d\n", id);
         comm_error_last_read_ = true;
         return vector<int64_t>(dp_list.size(), 0);
     }
     uint16_t sum_est = CalcChecksum(read_data, 9+size_total_dp);
     uint16_t sum_read = uint16_t(read_data[9+size_total_dp]) | uint16_t(read_data[9+size_total_dp+1])<<8;
     if (sum_est != sum_read) {
-        if(varbose_) printf("Read Error(crc): ID %d, est=%d, read=%d\n", servo_id, sum_est, sum_read);
+        if(verbose_) printf("Read Error(crc): ID %d, est=%d, read=%d\n", servo_id, sum_est, sum_read);
         comm_error_last_read_ = true;
         return vector<int64_t>(dp_list.size(), 0);
     }
@@ -975,11 +974,11 @@ vector<int64_t> DynamixelCommunicator::Read(const vector<DynamixelAddress>& dp_l
  */
 map<uint8_t, vector<int64_t>> DynamixelCommunicator::SyncRead(const vector<DynamixelAddress>& dp_list, const vector<uint8_t>& servo_id_list) {
     if (servo_id_list.size() > 100) {
-        if(varbose_) printf("Sync Read Error(too many servo): servo num=%d > 100\n", (int)servo_id_list.size());
+        if(verbose_) printf("Sync Read Error(too many servo): servo num=%d > 100\n", (int)servo_id_list.size());
         return map<uint8_t, vector<int64_t>>();
     }
     if (dp_list.size() > 10) {
-        if(varbose_) printf("Sync Read Error(too many param): param num=%d > 10\n", (int)dp_list.size());
+        if(verbose_) printf("Sync Read Error(too many param): param num=%d > 10\n", (int)dp_list.size());
         return map<uint8_t, vector<int64_t>>();
     }
     // 読み込むデータの範囲を決定, 連続していなくても許容
@@ -1014,14 +1013,14 @@ map<uint8_t, vector<int64_t>> DynamixelCommunicator::SyncRead(const vector<Dynam
     port_handler_->setPacketTimeout( uint16_t(deficient_byte_) );
     while( timeout_last_read_ && port_handler_->getBytesAvailable() < deficient_byte_) {
         if (port_handler_->isPacketTimeout()) { 
-            if(varbose_) printf("Sync Read Warn: clear buffer time out\n");
+            if(verbose_) printf("Sync Read Warn: clear buffer time out\n");
             break;
         }
     }
     port_handler_->clearPort();
     port_handler_->writePort(send_data, 14+num_servo);
 
-    // if(varbose_) {printf("write:" ); for (size_t i=0; i<14+num_servo; i++) printf("%02X ", send_data[i]); printf("\n");}
+    // if(verbose_) {printf("write:" ); for (size_t i=0; i<14+num_servo; i++) printf("%02X ", send_data[i]); printf("\n");}
 
     // データ読み込みの処理
     uint8_t read_data[51]; // 読み込むdpの数とサイズによって変わるが， 4*10+11=51 4バイトのデータ10個を同時に読み込むことはないので十分 
@@ -1033,7 +1032,7 @@ map<uint8_t, vector<int64_t>> DynamixelCommunicator::SyncRead(const vector<Dynam
         port_handler_->setPacketTimeout( uint16_t(11+size_total_dp) );
         while(port_handler_->getBytesAvailable() < 11+size_total_dp) {
             if (port_handler_->isPacketTimeout()) {
-                if(varbose_) printf("Sync Read Error(time out): ID %d, available bytes %d / %d\n", servo_id_list[i_servo], port_handler_->getBytesAvailable(), 11+size_total_dp);
+                if(verbose_) printf("Sync Read Error(time out): ID %d, available bytes %d / %d\n", servo_id_list[i_servo], port_handler_->getBytesAvailable(), 11+size_total_dp);
                 deficient_byte_ = 11+size_total_dp - port_handler_->getBytesAvailable();
                 timeout_last_read_ = true;
                 return id_data_vec_map; // これ以降すべての読み込みを諦める．
@@ -1041,11 +1040,11 @@ map<uint8_t, vector<int64_t>> DynamixelCommunicator::SyncRead(const vector<Dynam
         }
 
         int8_t read_length = port_handler_->readPort(read_data, 11+size_total_dp);
-        // if(varbose_) {printf("read:" ); for (size_t i=0; i<read_length; i++) printf("%02X ", read_data[i]); printf("\n");}
+        // if(verbose_) {printf("read:" ); for (size_t i=0; i<read_length; i++) printf("%02X ", read_data[i]); printf("\n");}
 
         // エラーチェック
         if (read_length == -1) {
-        if(varbose_) printf("Sync Read Error(read port) : ID %d\n", servo_id_list[i_servo]);
+        if(verbose_) printf("Sync Read Error(read port) : ID %d\n", servo_id_list[i_servo]);
         comm_error_last_read_ = true;
         continue;
         }
@@ -1053,26 +1052,26 @@ map<uint8_t, vector<int64_t>> DynamixelCommunicator::SyncRead(const vector<Dynam
             read_data[1] != HEADER[1] or
             read_data[2] != HEADER[2] or
             read_data[3] != HEADER[3]) {
-        if(varbose_) printf("Sync Read Error(header): ID %d\n", servo_id_list[i_servo]);
+        if(verbose_) printf("Sync Read Error(header): ID %d\n", servo_id_list[i_servo]);
         comm_error_last_read_ = true;
         continue;
         }
         uint8_t id = read_data[4];
         if ( id != servo_id_list[i_servo] ) {
-        if(varbose_) printf("Sync Read Error(packet id) : est ID=%d, read ID=%d\n", servo_id_list[i_servo], id);
+        if(verbose_) printf("Sync Read Error(packet id) : est ID=%d, read ID=%d\n", servo_id_list[i_servo], id);
         comm_error_last_read_ = true;
         continue;
         }
         uint8_t error = (uint8_t)read_data[8]; 
         if ( error & 0x7F ) { // error の最上位ビット以外が1のとき，通信状態の異常がある
-        if(varbose_) printf("Sync Read Error(packet error) : ID %d\n", id);
+        if(verbose_) printf("Sync Read Error(packet error) : ID %d\n", id);
         comm_error_last_read_ = true;
         continue;
         }
         uint16_t sum_est = CalcChecksum(read_data, 9+size_total_dp);
         uint16_t sum_read = uint16_t(read_data[9+size_total_dp]) | uint16_t(read_data[9+size_total_dp+1])<<8;
         if (sum_est != sum_read) {
-        if(varbose_) printf("Sync Read Error(crc): ID %d, est=%d, read=%d\n", id, sum_est, sum_read);
+        if(verbose_) printf("Sync Read Error(crc): ID %d, est=%d, read=%d\n", id, sum_est, sum_read);
         comm_error_last_read_ = true;
         continue;
         }
@@ -1098,11 +1097,11 @@ map<uint8_t, vector<int64_t>> DynamixelCommunicator::SyncRead(const vector<Dynam
  */
 map<uint8_t, vector<int64_t>> DynamixelCommunicator::SyncRead_fast(const vector<DynamixelAddress>& dp_list, const vector<uint8_t>& servo_id_list) {
     if ( servo_id_list.size() > 50 ) {
-        if(varbose_) printf("Fast Sync Read Error(too many servo): servo num=%d > 50\n", (int)servo_id_list.size());
+        if(verbose_) printf("Fast Sync Read Error(too many servo): servo num=%d > 50\n", (int)servo_id_list.size());
         return map<uint8_t, vector<int64_t>>();
     }
     if ( dp_list.size() > 10 ) {
-        if(varbose_) printf("Fast Sync Read Error(too many param): param num=%d > 10\n", (int)dp_list.size());
+        if(verbose_) printf("Fast Sync Read Error(too many param): param num=%d > 10\n", (int)dp_list.size());
         return map<uint8_t, vector<int64_t>>();
     }    
     // 読み込むデータの範囲を決定, 連続していなくても許容
@@ -1137,7 +1136,7 @@ map<uint8_t, vector<int64_t>> DynamixelCommunicator::SyncRead_fast(const vector<
     port_handler_->setPacketTimeout( uint16_t(deficient_byte_) );
     while( timeout_last_read_ && port_handler_->getBytesAvailable() < deficient_byte_) {
         if (port_handler_->isPacketTimeout()) { 
-            if(varbose_) printf("Sync Read fast Warn: clear buffer time out\n");
+            if(verbose_) printf("Sync Read fast Warn: clear buffer time out\n");
             break;
         }
     }
@@ -1151,7 +1150,7 @@ map<uint8_t, vector<int64_t>> DynamixelCommunicator::SyncRead_fast(const vector<
 	port_handler_->setPacketTimeout( uint16_t(length_read_data) );
 	while(port_handler_->getBytesAvailable() < length_read_data) {
 		if (port_handler_->isPacketTimeout() ) {
-		if(varbose_) printf("Fast Sync Read Error(time out) : available bytes %d / %d\n", port_handler_->getBytesAvailable(), length_read_data);
+		if(verbose_) printf("Fast Sync Read Error(time out) : available bytes %d / %d\n", port_handler_->getBytesAvailable(), length_read_data);
         deficient_byte_ = length_read_data - port_handler_->getBytesAvailable();
 		timeout_last_read_ = true;
 		return map<uint8_t, vector<int64_t>>();
@@ -1162,13 +1161,13 @@ map<uint8_t, vector<int64_t>> DynamixelCommunicator::SyncRead_fast(const vector<
     uint8_t read_data[1458]; // 読み込むサーボとデータサイズによって変わるが， 最大でも同時読み込みしたいアドレスの幅は25程度なので，(25+4)*50+8=1458;
     int8_t read_length = port_handler_->readPort(read_data, length_read_data);
 
-    // if(varbose_) {printf("write:" ); for (size_t i=0; i<14+num_servo; i++) printf("%02X ", send_data[i]); printf("\n");}
-    // if(varbose_) {printf("read:" ); for (size_t i=0; i<read_length; i++) printf("%02X ", read_data[i]); printf("\n");}
+    // if(verbose_) {printf("write:" ); for (size_t i=0; i<14+num_servo; i++) printf("%02X ", send_data[i]); printf("\n");}
+    // if(verbose_) {printf("read:" ); for (size_t i=0; i<read_length; i++) printf("%02X ", read_data[i]); printf("\n");}
 
     // 全体のエラーチェック
     comm_error_last_read_ = false;
 	if (read_length == -1) {
-		if(varbose_) printf("Fast Sync Read Error(read port)\n");
+		if(verbose_) printf("Fast Sync Read Error(read port)\n");
 		comm_error_last_read_ = true;
 		return map<uint8_t, vector<int64_t>>();
 	}
@@ -1177,13 +1176,13 @@ map<uint8_t, vector<int64_t>> DynamixelCommunicator::SyncRead_fast(const vector<
 		read_data[1] != HEADER[1] ||
 		read_data[2] != HEADER[2] ||
 		read_data[3] != HEADER[3]) {
-		if(varbose_) printf("Fast Sync Read Error(header)\n");
+		if(verbose_) printf("Fast Sync Read Error(header)\n");
 		comm_error_last_read_ = true;
 		return map<uint8_t, vector<int64_t>>();
 	}
 	// 読み込めたパケットのIDがブロードキャスト用のものか確認
 	if ( read_data[4] != 0xFE ) {
-		if(varbose_) printf("Fast Sync Read Error(broad cast id)\n");
+		if(verbose_) printf("Fast Sync Read Error(broad cast id)\n");
 		comm_error_last_read_ = true;
 		return map<uint8_t, vector<int64_t>>();
 	}
@@ -1193,13 +1192,13 @@ map<uint8_t, vector<int64_t>> DynamixelCommunicator::SyncRead_fast(const vector<
 	for(int i_servo=0; i_servo<num_servo; i_servo++) {
 		uint8_t id = (uint8_t)read_data[9 + i_servo*length_a_servo]; // servo id
         if ( id != servo_id_list[i_servo] ) {
-            if(varbose_) printf("Fast Sync Read Error(packet id) : expected %d, return %d\n", servo_id_list[i_servo], id);
+            if(verbose_) printf("Fast Sync Read Error(packet id) : expected %d, return %d\n", servo_id_list[i_servo], id);
             comm_error_last_read_ = true;
             return map<uint8_t, vector<int64_t>>(); // これ以降すべての読み込みを諦める．
         }
 		uint8_t error = (uint8_t)read_data[8 + i_servo*length_a_servo];
         if ( error & 0x7F ) { // error の最上位ビット以外が1のとき，通信状態の異常がある
-            if(varbose_) printf("Fast Sync Read Error(packet error) : ID %d\n", id);
+            if(verbose_) printf("Fast Sync Read Error(packet error) : ID %d\n", id);
             comm_error_last_read_ = true;
             continue; // 他のidのデータは生きている可能性があるので続行
         }
@@ -1225,19 +1224,19 @@ map<uint8_t, vector<int64_t>> DynamixelCommunicator::SyncRead_fast(const vector<
  */
 bool DynamixelCommunicator::SyncWrite(const vector<DynamixelAddress>& dp_list_sorted, const vector<uint8_t>& servo_id_list, const vector<vector<int64_t>>& data_vec_list) {
   if (dp_list_sorted.size() > 10) {
-    if(varbose_) printf("Sync Write Error(too many param): param num=%d > 10\n", (int)dp_list_sorted.size());
+    if(verbose_) printf("Sync Write Error(too many param): param num=%d > 10\n", (int)dp_list_sorted.size());
     return false;
   }
   if (servo_id_list.size() > 100) {
-    if(varbose_) printf("Sync Write Error(too many servo): servo num=%d > 100\n", (int)servo_id_list.size());
+    if(verbose_) printf("Sync Write Error(too many servo): servo num=%d > 100\n", (int)servo_id_list.size());
     return false;
   }
   if (servo_id_list.size() != data_vec_list.size()) {
-    if(varbose_) printf("Sync Write Error(mismatch servo and data_vec num): servo num=%d, data_vec num=%d\n", (int)servo_id_list.size(), (int)data_vec_list.size());
+    if(verbose_) printf("Sync Write Error(mismatch servo and data_vec num): servo num=%d, data_vec num=%d\n", (int)servo_id_list.size(), (int)data_vec_list.size());
     return false;
   }
   for (auto data_vec : data_vec_list) if ( dp_list_sorted.size() != data_vec.size() ) {
-    if(varbose_) printf("Sync Write Error(mismatch param and data num): param num=%d, data num=%d\n", (int)servo_id_list.size(), (int)data_vec.size());
+    if(verbose_) printf("Sync Write Error(mismatch param and data num): param num=%d, data num=%d\n", (int)servo_id_list.size(), (int)data_vec.size());
     return false;
   }
   // 書き込むデータの範囲を決定, ソート済みかつ連続していないとNG
@@ -1246,7 +1245,7 @@ bool DynamixelCommunicator::SyncWrite(const vector<DynamixelAddress>& dp_list_so
   // アドレスが連続しているか確認
   for (size_t i=0; i<dp_list_sorted.size()-1; i++) {
     if (dp_list_sorted[i].address() + dp_list_sorted[i].size() != dp_list_sorted[i+1].address()) {
-    if(varbose_) printf("Sync Write Error(address is not continuous):");
+    if(verbose_) printf("Sync Write Error(address is not continuous):");
     return false;
     }
   }

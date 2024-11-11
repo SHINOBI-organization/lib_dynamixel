@@ -31,7 +31,7 @@ class DynamixelCommunicator {
         void set_baudrate(int baudrate) { baudrate_ = baudrate; }
         void set_latency_timer(uint8_t latency_timer) { latency_timer_ = latency_timer; }
         void set_status_return_level(int level) { status_return_level_ = level; }
-        void set_varbose(bool varbose) { varbose_ = varbose; }
+        void set_verbose(bool verbose) { verbose_ = verbose; }
 
         string port_name(){ return string(port_name_); }
 
@@ -88,7 +88,7 @@ class DynamixelCommunicator {
         bool comm_error_last_read_     = false; // 直前の通信に何らかの異常が発生したことを示すフラグ
         bool hardware_error_last_read_ = false; // ハードウェアエラーの有無を示すフラグ status packetのerror部分から取得する
         
-        bool varbose_ = false;
+        bool verbose_ = false;
         uint8_t num_try_       = 5;
         uint8_t msec_interval_ = 5;
         int32_t deficient_byte_ = 0;
