@@ -38,6 +38,7 @@ class DynamixelCommunicator {
         bool timeout_last_read(){ return timeout_last_read_; }
         bool comm_error_last_read(){ return comm_error_last_read_; }
         bool hardware_error_last_read(){ return hardware_error_last_read_; }
+        vector<uint8_t> hardware_error_id_last_read(){ return hardware_error_id_last_read_; }
 
         void set_retry_config(int num_try, int msec_interval){
             num_try_ = std::max(num_try, 1);
@@ -87,6 +88,7 @@ class DynamixelCommunicator {
         bool timeout_last_read_        = false; // 直前の通信でタイムアウトが発生したことを示すフラグ
         bool comm_error_last_read_     = false; // 直前の通信に何らかの異常が発生したことを示すフラグ
         bool hardware_error_last_read_ = false; // ハードウェアエラーの有無を示すフラグ status packetのerror部分から取得する
+        vector<uint8_t> hardware_error_id_last_read_; // ハードウェアエラーが発生したサーボのIDリスト
         
         bool verbose_ = false;
         uint8_t num_try_       = 5;

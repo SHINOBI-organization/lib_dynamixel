@@ -593,6 +593,7 @@ map<uint8_t, int64_t> DynamixelCommunicator::SyncRead( DynamixelAddress dp, cons
     uint8_t read_data[15]; // 11+dp.size()<=11+4=15より十分 
     map<uint8_t, int64_t> id_data_int_map;
     hardware_error_last_read_ = false;
+    hardware_error_id_last_read_.clear();
     comm_error_last_read_ = false;
     for(int i_servo=0; i_servo<num_servo; i_servo++) {
         timeout_last_read_ = false;
@@ -646,6 +647,7 @@ map<uint8_t, int64_t> DynamixelCommunicator::SyncRead( DynamixelAddress dp, cons
 
         // 正常なデータ, hardware error は通信の可否に影響はないので以降でチェックする．
         if ( error & 0x80 ) hardware_error_last_read_ = true; // error の最上位ビットが1のとき，ハードウェアエラーが発生している
+        if ( error & 0x80 ) hardware_error_id_last_read_.push_back(id);
         for(size_t i=0; i<dp.size(); i++) data_read_[i] = read_data[9+i];
         id_data_int_map[id] = DecodeDataRead(dp.data_type());
     }
@@ -735,6 +737,7 @@ map<uint8_t, int64_t> DynamixelCommunicator::SyncRead_fast(DynamixelAddress dp, 
 	}
 	// 読み込めたパケットを個々のサーボのパケットに分割してエラーと正常系の処理,チェックサムの処理は行わない
     hardware_error_last_read_ = false;
+    hardware_error_id_last_read_.clear();
     map<uint8_t, int64_t> id_data_int_map;
 	for(int i_servo=0; i_servo<num_servo; i_servo++) {
 		uint8_t id = (uint8_t)read_data[9 + i_servo*length_a_servo]; // servo id
@@ -751,6 +754,7 @@ map<uint8_t, int64_t> DynamixelCommunicator::SyncRead_fast(DynamixelAddress dp, 
         }
 		// 正常なデータ, hardware error は通信の可否に影響はないので以降でチェックする．
         if ( error & 0x80 ) hardware_error_last_read_ = true; // error の最上位ビットが1のとき，ハードウェアエラーが発生している
+        if ( error & 0x80 ) hardware_error_id_last_read_.push_back(id);
 		for(size_t i=0; i<dp.size(); i++) data_read_[i] = read_data[10 + i_servo*length_a_servo + i];
 		id_data_int_map[id] = DecodeDataRead(dp.data_type());
 	}
@@ -1026,6 +1030,7 @@ map<uint8_t, vector<int64_t>> DynamixelCommunicator::SyncRead(const vector<Dynam
     uint8_t read_data[51]; // 読み込むdpの数とサイズによって変わるが， 4*10+11=51 4バイトのデータ10個を同時に読み込むことはないので十分 
     map<uint8_t, vector<int64_t>> id_data_vec_map;
     hardware_error_last_read_ = false;
+    hardware_error_id_last_read_.clear();
     comm_error_last_read_ = false;
     for(int i_servo=0; i_servo<num_servo; i_servo++) {
         timeout_last_read_ = false;
@@ -1078,6 +1083,7 @@ map<uint8_t, vector<int64_t>> DynamixelCommunicator::SyncRead(const vector<Dynam
         
         // 正常なデータ
         if ( error & 0x80 ) hardware_error_last_read_ = true ; // error の最上位ビットが1のとき，ハードウェアエラーが発生している
+        if ( error & 0x80 ) hardware_error_id_last_read_.push_back(id);
         id_data_vec_map[id].resize(dp_list.size());
         for (size_t i_dp=0; i_dp<dp_list.size(); i_dp++) {
             const DynamixelAddress& dp = dp_list[i_dp];
@@ -1188,6 +1194,7 @@ map<uint8_t, vector<int64_t>> DynamixelCommunicator::SyncRead_fast(const vector<
 	}
 	// 読み込めたパケットを個々のサーボのパケットに分割して処理,チェックサムの処理は行わない
     hardware_error_last_read_ = false;
+    hardware_error_id_last_read_.clear();
     map<uint8_t, vector<int64_t>> id_data_vec_map;
 	for(int i_servo=0; i_servo<num_servo; i_servo++) {
 		uint8_t id = (uint8_t)read_data[9 + i_servo*length_a_servo]; // servo id
@@ -1204,6 +1211,7 @@ map<uint8_t, vector<int64_t>> DynamixelCommunicator::SyncRead_fast(const vector<
         }
 		// 正常なデータ, hardware error は通信の可否に影響はないので以降でチェックする．
         if( error & 0x80 ) hardware_error_last_read_ = true; // error の最上位ビットが1のとき，ハードウェアエラーが発生している
+        if( error & 0x80 ) hardware_error_id_last_read_.push_back(id);
         id_data_vec_map[id].resize(dp_list.size(), 0);
         for (size_t i_dp=0; i_dp<dp_list.size(); i_dp++) {
             const DynamixelAddress& dp = dp_list[i_dp];
