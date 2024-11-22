@@ -14,8 +14,8 @@ enum DynamixelModelNumber {
   MODEL_XC330_M181	= 1230,
   MODEL_XC330_M288	= 1240,
   MODEL_XL430_W250	= 1060,
-  MODEL_XC430_W150	= 1070,
-  MODEL_XC430_W250	= 1080,
+  MODEL_XC430_W150	= 1070, // MODEL_XC430_W150BB と同じ
+  MODEL_XC430_W240	= 1080, // MODEL_XC430_W240BB と同じ
   MODEL_2XL430_W250	= 1090,
   MODEL_2XC430_W250	= 1160,
   MODEL_XM430_W210	= 1030,
@@ -30,9 +30,11 @@ enum DynamixelModelNumber {
   MODEL_XW430_T333	= 1270,
   MODEL_XM540_W150	= 1130,
   MODEL_XH540_W150	= 1110,
+  MODEL_XD540_T150  = 1111,
   MODEL_XH540_V150	= 1150,
   MODEL_XM540_W270	= 1120,
   MODEL_XH540_W270	= 1100,
+  MODEL_XD540_T270  = 1101,
   MODEL_XH540_V270	= 1140,
   MODEL_XW540_T140	= 1180,
   MODEL_XW540_T260	= 1170,
@@ -348,5 +350,40 @@ struct AddrP : AddrCommon {
     static inline DynamixelAddress external_port_data_3  {604, TYPE_UINT16};
     static inline DynamixelAddress external_port_data_4  {606, TYPE_UINT16};
 };
+
+inline bool has_external_port(uint16_t model_num) {
+    switch (model_num) {
+      // XH540 
+      case MODEL_XH540_W150:
+      case MODEL_XH540_V150:
+      case MODEL_XH540_W270:
+      case MODEL_XH540_V270:
+      // XD540
+      case MODEL_XD540_T150:
+      case MODEL_XD540_T270:
+      // Pシリーズ
+      case MODEL_PH54_200_S500:
+      case MODEL_PH54_100_S500:
+      case MODEL_PH42_020_S300:
+      case MODEL_PM54_060_S250:
+      case MODEL_PM54_040_S250:
+      case MODEL_PM42_010_S260: 
+               return true;
+      default: return false;
+    }
+}
+
+// あとでちゃんと調べる．
+inline bool has_current_sensor(uint16_t model_num) {
+    switch (model_num) { 
+        case MODEL_XL430_W250:
+        case MODEL_2XL430_W250:
+        case MODEL_XC430_W150:
+        case MODEL_XC430_W240:
+        case MODEL_2XC430_W250:
+                 return false;
+        default: return true;
+    }
+}
 
 #endif /* DYNAMIXEL_PARAMETERS_H_ */
