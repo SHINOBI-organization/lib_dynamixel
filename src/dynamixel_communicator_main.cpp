@@ -188,17 +188,17 @@ int64_t DynamixelCommunicator::DecodeDataRead(DynamixelDataType type) {
  */
 bool DynamixelCommunicator::OpenPort() {
   if (port_handler_->openPort()) {
-    printf("Succeeded to open the port : %s!\n", port_name_);
+    if (verbose_) printf("Succeeded to open the port : %s!\n", port_name_);
   } else {
     printf("Failed to open the port : %s!\n", port_name_);
     return false;
   }
 
   port_handler_->setLatencyTimer(latency_timer_);
-  printf("Succeeded to change the latency timer : %d!\n", latency_timer_);
+  if (verbose_) printf("Succeeded to change the latency timer : %d!\n", latency_timer_);
 
   if (port_handler_->setBaudRate(baudrate_)) {
-    printf("Succeeded to change the baudrate : %d!\n", baudrate_);
+    if (verbose_) printf("Succeeded to change the baudrate : %d!\n", baudrate_);
     return true;
   } else {
     printf("Failed to change the baudrate : %d!\n", baudrate_);
@@ -211,7 +211,7 @@ bool DynamixelCommunicator::OpenPort() {
  */
 bool DynamixelCommunicator::ClosePort() {
   port_handler_->closePort();
-  printf("Close port : %s!\n", port_name_);
+  if (verbose_) printf("Close port : %s!\n", port_name_);
   return true;
 }
 
