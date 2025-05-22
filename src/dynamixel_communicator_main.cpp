@@ -332,6 +332,10 @@ bool DynamixelCommunicator::Ping(uint8_t servo_id) {
  * @return  bool 通信成功判定
  */
 bool DynamixelCommunicator::Write(DynamixelAddress dp, uint8_t servo_id, int64_t data_int) {
+    if (dp.is_dummy()) {
+            if (verbose_) printf("Sync Write Error(dummy address is readonly): ID %d\n", servo_id);
+            return false;
+    }// dummy addressは書き込まない  
     uint8_t send_data[16] = {0}; // 書き込むdpのサイズによって変わるが， dp.size()は最大4 4+12=16より十分
     uint16_t length = dp.size()+5;
     send_data[0] = HEADER[0];
@@ -368,6 +372,10 @@ bool DynamixelCommunicator::Write(DynamixelAddress dp, uint8_t servo_id, int64_t
     }
     uint8_t read_data[11]; // Writeのステータスパケットは固定で11
     port_handler_->readPort(read_data, 11);
+
+    // if(verbose_) {printf("write:" ); for (size_t i=0; i<16; i++) printf("%02X ", send_data[i]); printf("\n");}
+    // if(verbose_) {printf("read:" ); for (size_t i=0; i<11; i++) printf("%02X ", read_data[i]); printf("\n");}
+
     // エラーチェック
     comm_error_last_read_ = false;
     if (read_data[0] != HEADER[0] or
@@ -447,6 +455,10 @@ int64_t DynamixelCommunicator::Read(DynamixelAddress dp, uint8_t servo_id) {
 
     uint8_t read_data[15]; // 11+dp.size()<=11+4=15より十分
     uint8_t read_length = port_handler_->readPort(read_data, 11+dp.size());
+
+    // if(verbose_) {printf("write:" ); for (size_t i=0; i<14; i++) printf("%02X ", send_data[i]); printf("\n");}
+    // if(verbose_) {printf("read:" ); for (size_t i=0; i<15; i++) printf("%02X ", read_data[i]); printf("\n");}
+    
     // エラーチェック
     comm_error_last_read_ = false;
     if (read_length != 11+dp.size()) {
@@ -491,6 +503,10 @@ int64_t DynamixelCommunicator::Read(DynamixelAddress dp, uint8_t servo_id) {
  * @return bool 通信成功判定
  */
 bool DynamixelCommunicator::SyncWrite(DynamixelAddress dp,  const vector<uint8_t>& servo_id_list, const vector<int64_t>& data_int_list) {
+  if (dp.is_dummy()) {
+        if (verbose_) printf("Sync Write Error(dummy address is readonly)\n");
+        return false;
+  }// dummy addressは書き込まない  
   if (servo_id_list.size() > 100) {
     if(verbose_) printf("Sync Write Error(too many servo): servo num=%d > 100\n", (int)servo_id_list.size());
     return false;
@@ -777,12 +793,16 @@ bool DynamixelCommunicator::Write(const vector<DynamixelAddress>& dp_list_sorted
         if(verbose_) printf("Write Error(mismatch param and data num): param num=%d, data num=%d\n", (int)dp_list_sorted.size(), (int)data_int_list.size());
         return false;
     }
-    // 書き込むデータの範囲を決定, ソート済みかつ連続していないとNG
+    // 書き込むデータの範囲を決定, ソート済みかつdummyでないアドレスが連続していないとNG
     DynamixelAddress dp_min = *dp_list_sorted.begin();
     DynamixelAddress dp_max = *dp_list_sorted.rbegin();
-    for (size_t i=0; i<dp_list_sorted.size()-1; i++) { // アドレスが連続しているか確認
-        if (dp_list_sorted[i].address() + dp_list_sorted[i].size() != dp_list_sorted[i+1].address()) {
-            if(verbose_) printf("Write Error(address is not continuous): ID %d\n", servo_id);
+    for (size_t i=0; i<dp_list_sorted.size(); i++) { // アドレスが連続しているか確認
+        if (dp_list_sorted[i].is_dummy()) {
+            if (verbose_) printf("Write Error(dummy address is readonly): ID %d\n", servo_id);
+            return false;
+        }// dummy addressは書き込まない  
+        if (i+1<dp_list_sorted.size() && dp_list_sorted[i].address() + dp_list_sorted[i].size() != dp_list_sorted[i+1].address()) {
+            if(verbose_) printf("Write Error(address is not continuous):  ID %d, addr1=%d (%d), addr2=%d\n", servo_id, dp_list_sorted[i].address(), dp_list_sorted[i].size(), dp_list_sorted[i+1].address());
             return false;
         }
     }
@@ -1247,14 +1267,17 @@ bool DynamixelCommunicator::SyncWrite(const vector<DynamixelAddress>& dp_list_so
     if(verbose_) printf("Sync Write Error(mismatch param and data num): param num=%d, data num=%d\n", (int)servo_id_list.size(), (int)data_vec.size());
     return false;
   }
-  // 書き込むデータの範囲を決定, ソート済みかつ連続していないとNG
+  // 書き込むデータの範囲を決定, ソート済みかつdummyでないアドレスが連続していることを確認
   DynamixelAddress dp_min = *dp_list_sorted.begin();
   DynamixelAddress dp_max = *dp_list_sorted.rbegin();
-  // アドレスが連続しているか確認
-  for (size_t i=0; i<dp_list_sorted.size()-1; i++) {
-    if (dp_list_sorted[i].address() + dp_list_sorted[i].size() != dp_list_sorted[i+1].address()) {
-    if(verbose_) printf("Sync Write Error(address is not continuous):");
-    return false;
+  for (size_t i=0; i<dp_list_sorted.size(); i++) {
+    if (dp_list_sorted[i].is_dummy()) {
+      if (verbose_) printf("Sync Write Error(dummy address is readonly)\n");
+      return false;
+    }// dummy addressは書き込まない  
+    if (i+1<dp_list_sorted.size() && dp_list_sorted[i].address() + dp_list_sorted[i].size() != dp_list_sorted[i+1].address()) {
+      if(verbose_) printf("Sync Write Error(address is not continuous): addr1=%d (%d), addr2=%d\n", dp_list_sorted[i].address(), dp_list_sorted[i].size(), dp_list_sorted[i+1].address());
+      return false;
     }
   }
   auto size_total_dp = dp_max.address() + dp_max.size() - dp_min.address();

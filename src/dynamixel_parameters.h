@@ -38,13 +38,14 @@ enum DynamixelModelNumber {
   MODEL_XH540_V270	= 1140,
   MODEL_XW540_T140	= 1180,
   MODEL_XW540_T260	= 1170,
-  // Dynamixel P series (Old: Pro Plus)
+  // Dynamixel P series
   MODEL_PH54_200_S500 = 2020,
   MODEL_PH54_100_S500 = 2010,
   MODEL_PH42_020_S300 = 2000,
   MODEL_PM54_060_S250 = 2120,
   MODEL_PM54_040_S250 = 2110,
   MODEL_PM42_010_S260 = 2100,
+  // Dynamixel Pro plus series
   MODEL_H54_200_S500_A = 54025,
   MODEL_H54_100_S500_A = 53769,
   MODEL_H42_020_S300_A = 51201,
@@ -70,17 +71,18 @@ enum DynamixelSeries {
   SERIES_X,
   SERIES_P,
   SERIES_PRO,
+  SERIES_PRO_PLUS = SERIES_P // ProPlusはPと同じ扱い
 };
 
 inline DynamixelSeries dynamixel_series(uint16_t model_num){ 
-    return (1000 <= model_num && model_num < 2000) ? SERIES_X
-          :(2000 <= model_num && model_num < 3000) ? SERIES_P 
-          :(30000 <= model_num && model_num < 40000) ? SERIES_PRO //L
-          :(46353== model_num || 46097== model_num || 43289== model_num) ? SERIES_P
-          :(40000 <= model_num && model_num < 50000) ? SERIES_PRO //M
-          :(54025== model_num || 53769== model_num || 51201== model_num) ? SERIES_P
-          :(50000 <= model_num && model_num < 60000) ? SERIES_PRO //H
-          : SERIES_UNKNOWN; 
+    return (1000  <= model_num && model_num < 2000 )                      ? SERIES_X
+          :(2000  <= model_num && model_num < 3000 )                      ? SERIES_P 
+          :(30000 <= model_num && model_num < 40000)                      ? SERIES_PRO      // L
+          :(46353 == model_num || 46097== model_num || 43289== model_num) ? SERIES_PRO_PLUS // M plus
+          :(40000 <= model_num && model_num < 50000)                      ? SERIES_PRO      // M
+          :(54025 == model_num || 53769== model_num || 51201== model_num) ? SERIES_PRO_PLUS // H plus
+          :(50000 <= model_num && model_num < 60000)                      ? SERIES_PRO      // H
+          :                                                                 SERIES_UNKNOWN; 
 }
 
 enum FactoryResetLevel {
@@ -158,21 +160,27 @@ enum DynamixelPhysicalUnit { // これは型番によって変わるので，識
 class DynamixelAddress {
  public:
   DynamixelAddress( uint16_t address, DynamixelDataType data_type, DynamixelPhysicalUnit physical_unit = NOUNIT ):
-    address_(address), data_type_(data_type), physical_unit_(physical_unit) {
-	switch (data_type_) {
-        case TYPE_INT8:
-        case TYPE_UINT8:  size_ = 1; break;
-        case TYPE_INT16:
-        case TYPE_UINT16: size_ = 2; break;
-        case TYPE_INT32:
-        case TYPE_UINT32: size_ = 4; break;
+    is_dummy_(false) , address_(address), data_type_(data_type), physical_unit_(physical_unit){
+	  switch (data_type_) {
+      case TYPE_INT8:
+      case TYPE_UINT8:  size_ = 1; break;
+      case TYPE_INT16:
+      case TYPE_UINT16: size_ = 2; break;
+      case TYPE_INT32:
+      case TYPE_UINT32: size_ = 4; break;
     }
   }
 
+  bool                  is_dummy() const { return is_dummy_; }
   uint16_t              size() const { return size_; }
   uint16_t              address() const { return address_; }
   DynamixelDataType     data_type() const { return data_type_; }
   DynamixelPhysicalUnit physical_unit() const { return physical_unit_; }
+  DynamixelAddress      make_dummy() const { 
+     auto addr = DynamixelAddress( address_, data_type_, physical_unit_ );
+     addr.is_dummy_ = true; 
+     return addr;
+  }
 
   int64_t val2pulse(const double val, const uint16_t model_num) const { 
     assert(dynamixel_series(model_num) != SERIES_UNKNOWN); // 未対応のシリーズの場合はエラー
@@ -195,6 +203,7 @@ class DynamixelAddress {
   }
   double pulse2val(const int64_t pulse, const uint16_t model_num ) const {
     assert(dynamixel_series(model_num) != SERIES_UNKNOWN); // 未対応のシリーズの場合はエラー
+    if ( is_dummy_ ) return std::numeric_limits<double>::quiet_NaN();
     switch (physical_unit_) {
       case UNIT_POSITION:         return pulse * (2*M_PI) / pos_resolution(model_num)       /*rad*/;
       case UNIT_POSITION_OFFSET:  return pulse * (2*M_PI) / pos_resolution(model_num) - M_PI/*rad*/;
@@ -212,6 +221,7 @@ class DynamixelAddress {
   }
 
  private:
+  bool is_dummy_;
   uint16_t address_;
   uint8_t size_;
   DynamixelDataType data_type_;
@@ -219,23 +229,24 @@ class DynamixelAddress {
   uint32_t pos_resolution(uint16_t model_num) const {
     switch (model_num) {
       // Pシリーズ
-      case MODEL_PH54_200_S500: return 1003846;
+      case MODEL_PH54_200_S500:
       case MODEL_PH54_100_S500: return 1003846;
       case MODEL_PH42_020_S300: return 607500;
-      case MODEL_PM54_060_S250: return 502834;
+      case MODEL_PM54_060_S250: 
       case MODEL_PM54_040_S250: return 502834;
       case MODEL_PM42_010_S260: return 526374;
-      case MODEL_H54_200_S500_A: return ;
-      case MODEL_H54_100_S500_A: return ;
-      case MODEL_H42_020_S300_A: return ;
-      case MODEL_M54_060_S250_A: return ;
-      case MODEL_M54_040_S250_A: return ;
+      // ProPlusシリーズ
+      case MODEL_H54_200_S500_A:
+      case MODEL_H54_100_S500_A: return 1003846;
+      case MODEL_H42_020_S300_A: return 607500;
+      case MODEL_M54_060_S250_A:
+      case MODEL_M54_040_S250_A: return 502834;
       case MODEL_M42_010_S260_A: return 526375;
-      // 旧Proシリーズ
-      case MODEL_H54_200_S500: return 501923;
+      // Proシリーズ
+      case MODEL_H54_200_S500:
       case MODEL_H54_100_S500: return 501923;
       case MODEL_H42_020_S300: return 303750;
-      case MODEL_M54_060_S250: return 251417;
+      case MODEL_M54_060_S250:
       case MODEL_M54_040_S250: return 251417;
       case MODEL_M42_010_S260: return 263187;
       case MODEL_L54_050_S290: return 207692;
@@ -256,6 +267,7 @@ class DynamixelAddress {
     if (dynamixel_series(model_num) == SERIES_P) return 1.00;
     else // dynamixel_series(model_num) == SERIES_X || SERIES_PRO
       switch (model_num) {
+        // Proシリーズ
         case MODEL_H42_020_S300:
         case MODEL_M42_010_S260: 
         case MODEL_L42_010_S300: return 8250.0/2048.0;
@@ -293,13 +305,27 @@ class DynamixelAddress {
         case MODEL_L54_050_S500:
         case MODEL_L54_030_S500: return 1/501.923;
         case MODEL_L54_030_S400: return 1/400.550;
-        case MODEL_L42_010_S300: return 1/303.8; 
+        case MODEL_L42_010_S300: return 1/303.8;
+        default:                 return 1/100.0; // 適当な値
       }
   }
   double acc_factor(uint16_t model_num) const {
     if     (  dynamixel_series(model_num) == SERIES_P   ) return 1.0    /*rev/min^2*// 60.0 / 60.0 * (2*M_PI); // ベステクの数値は間違ってる
     else if ( dynamixel_series(model_num) == SERIES_X   ) return 214.577/*rev/min^2*// 60.0 / 60.0 * (2*M_PI);
-    else    /*dynamixel_series(model_num) == SERIES_PRO*/ return 58000.0/*rev/min^2*// 60.0 / 60.0 * (2*M_PI);
+    else    /*dynamixel_series(model_num) == SERIES_PRO*/ 
+      switch (model_num) { // 
+        case MODEL_H54_200_S500:
+        case MODEL_H54_100_S500: return 58000.0/501.923/*rev/min^2*// 60.0 / 60.0 * (2*M_PI);
+        case MODEL_H42_020_S300: return 58000.0/303.750/*rev/min^2*// 60.0 / 60.0 * (2*M_PI);
+        case MODEL_M54_060_S250:
+        case MODEL_M54_040_S250: return 58000.0/251.417/*rev/min^2*// 60.0 / 60.0 * (2*M_PI);
+        case MODEL_L54_050_S290: return 58000.0/288.461/*rev/min^2*// 60.0 / 60.0 * (2*M_PI);
+        case MODEL_L54_050_S500:
+        case MODEL_L54_030_S500: return 58000.0/501.923/*rev/min^2*// 60.0 / 60.0 * (2*M_PI);
+        case MODEL_L54_030_S400: return 58000.0/400.550/*rev/min^2*// 60.0 / 60.0 * (2*M_PI);
+        case MODEL_L42_010_S300: return 58000.0/303.8/*rev/min^2*// 60.0 / 60.0 * (2*M_PI);
+        default:                 return 58000.0/100.0/*rev/min^2*// 60.0 / 60.0 * (2*M_PI); // 適当な値
+      }
   }
 };
 
@@ -324,7 +350,7 @@ struct AddrX : AddrCommon{
     static inline DynamixelAddress min_voltage_limit     { 34, TYPE_UINT16, UNIT_VOLTAGE        };
     static inline DynamixelAddress pwm_limit             { 36, TYPE_UINT16, UNIT_PWM            };
     static inline DynamixelAddress current_limit         { 38, TYPE_UINT16, UNIT_CURRENT        };
-    static inline DynamixelAddress acceleration_limit    { 40, TYPE_UINT32, UNIT_ACCELERATION   }; // e-manualには存在しない．Pシリーズとの一貫性のため，また，なぜか読み書きできるため，追加した．
+    static inline DynamixelAddress acceleration_limit    { 40, TYPE_UINT32, UNIT_ACCELERATION   }; // e-manualには存在しない．Pシリーズとの一貫性のため，また，なぜか読み書きできるため，追加した． UNIT_NANにし他方がいいかも...
     static inline DynamixelAddress velocity_limit        { 44, TYPE_UINT32, UNIT_VELOCITY       };
     static inline DynamixelAddress max_position_limit    { 48, TYPE_UINT32, UNIT_POSITION_OFFSET};
     static inline DynamixelAddress min_position_limit    { 52, TYPE_UINT32, UNIT_POSITION_OFFSET};
@@ -434,8 +460,6 @@ struct AddrPro : AddrCommon {
     static inline DynamixelAddress temperature_limit     { 21, TYPE_UINT8 , UNIT_TEMPERATURE };
     static inline DynamixelAddress max_voltage_limit     { 22, TYPE_UINT16, UNIT_VOLTAGE     };
     static inline DynamixelAddress min_voltage_limit     { 24, TYPE_UINT16, UNIT_VOLTAGE     };
-    // static inline DynamixelAddress pwm_limit             { , TYPE_UINT16, UNIT_PWM         };
-    // static inline DynamixelAddress current_limit         { , TYPE_UINT16, UNIT_CURRENT     };
     static inline DynamixelAddress acceleration_limit    { 26, TYPE_UINT32, UNIT_ACCELERATION};
     static inline DynamixelAddress torque_limit          { 30, TYPE_UINT16, UNIT_CURRENT     };
     static inline DynamixelAddress velocity_limit        { 32, TYPE_UINT32, UNIT_VELOCITY    };
@@ -451,17 +475,11 @@ struct AddrPro : AddrCommon {
     static inline DynamixelAddress led_red               {563, TYPE_UINT8 };
     static inline DynamixelAddress led_green             {564, TYPE_UINT8 };
     static inline DynamixelAddress led_blue              {565, TYPE_UINT8 };
-    // static inline DynamixelAddress status_return_level   {, TYPE_UINT8 };
-    // static inline DynamixelAddress registered_instruction{, TYPE_UINT8 };
-    // static inline DynamixelAddress hardware_error_status {, TYPE_UINT8 };
     static inline DynamixelAddress velocity_i_gain       {586, TYPE_UINT16};
     static inline DynamixelAddress velocity_p_gain       {588, TYPE_UINT16};
-    // static inline DynamixelAddress position_d_gain       {, TYPE_UINT16};
-    // static inline DynamixelAddress position_i_gain       {, TYPE_UINT16};
     static inline DynamixelAddress position_p_gain       {594, TYPE_UINT16};
     static inline DynamixelAddress goal_position         {596, TYPE_INT32 , UNIT_POSITION    };
     static inline DynamixelAddress goal_velocity         {600, TYPE_INT32 , UNIT_VELOCITY    };
-    // static inline DynamixelAddress goal_current          {604, TYPE_INT16 , UNIT_CURRENT     };
     static inline DynamixelAddress goal_torque           {604, TYPE_INT16 , UNIT_CURRENT     };
     static inline DynamixelAddress goal_acceleration     {606, TYPE_INT32 , UNIT_ACCELERATION};
     static inline DynamixelAddress moving                {610, TYPE_UINT8 };
@@ -469,7 +487,7 @@ struct AddrPro : AddrCommon {
     static inline DynamixelAddress present_velocity      {615, TYPE_INT32 , UNIT_VELOCITY    };
     static inline DynamixelAddress present_current       {621, TYPE_INT16 , UNIT_CURRENT     };
     static inline DynamixelAddress present_input_voltage {623, TYPE_UINT16, UNIT_VOLTAGE     };
-    static inline DynamixelAddress present_temperature   {625, TYPE_UINT8 , UNIT_TEMPERATURE};
+    static inline DynamixelAddress present_temperture    {625, TYPE_UINT8 , UNIT_TEMPERATURE };
     static inline DynamixelAddress external_port_data_1  {626, TYPE_UINT16};
     static inline DynamixelAddress external_port_data_2  {628, TYPE_UINT16};
     static inline DynamixelAddress external_port_data_3  {630, TYPE_UINT16};
@@ -478,6 +496,21 @@ struct AddrPro : AddrCommon {
     static inline DynamixelAddress registered_instruction{890, TYPE_UINT8 };
     static inline DynamixelAddress status_return_level   {891, TYPE_UINT8 };
     static inline DynamixelAddress hardware_error_status {892, TYPE_UINT8 };
+    // 共通化のための小細工
+    static inline DynamixelAddress pwm_limit            = torque_limit.make_dummy();
+    static inline DynamixelAddress current_limit        = torque_limit;
+    static inline DynamixelAddress goal_current         = goal_torque;
+    static inline DynamixelAddress goal_pwm             = goal_torque.make_dummy();
+    static inline DynamixelAddress profile_velocity     = goal_velocity;
+    static inline DynamixelAddress profile_acceleration = goal_acceleration;
+    static inline DynamixelAddress present_pwm          = present_position.make_dummy();
+    static inline DynamixelAddress velocity_trajectory  = present_velocity.make_dummy();
+    static inline DynamixelAddress position_trajectory  = present_position.make_dummy();
+    static inline DynamixelAddress position_d_gain      = position_p_gain.make_dummy();
+    static inline DynamixelAddress position_i_gain      = position_p_gain.make_dummy();
+    static inline DynamixelAddress feedforward_2nd_gain = position_p_gain.make_dummy();
+    static inline DynamixelAddress feedforward_1st_gain = position_p_gain.make_dummy();
+    static inline DynamixelAddress bus_watchdog         = DynamixelAddress(  0, TYPE_UINT8 , UNIT_BUS_WATCHDOG ).make_dummy();
 };
 
 inline bool has_external_port(uint16_t model_num) {
