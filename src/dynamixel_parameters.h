@@ -333,16 +333,16 @@ class DynamixelAddress {
 struct AddrCommon {
     static inline DynamixelAddress model_number      {  0, TYPE_UINT16};
     static inline DynamixelAddress id                {  7, TYPE_UINT8 };
-    static inline DynamixelAddress baudrate          {  8, TYPE_UINT8 };
-    static inline DynamixelAddress return_delay_time {  9, TYPE_UINT8 , UNIT_RETURN_DELAY_TIME};
-    static inline DynamixelAddress drive_mode        { 10, TYPE_UINT8 }; // Pro にはなし
-    static inline DynamixelAddress operating_mode    { 11, TYPE_UINT8 };
-    static inline DynamixelAddress shadow_id         { 12, TYPE_UINT8 }; // Pro にはなし
 };
 
 // dynamixel X series   
 struct AddrX : AddrCommon{
     static inline DynamixelSeries series() { return SERIES_X;}
+    static inline DynamixelAddress baudrate          {  8, TYPE_UINT8 };
+    static inline DynamixelAddress return_delay_time {  9, TYPE_UINT8 , UNIT_RETURN_DELAY_TIME};
+    static inline DynamixelAddress drive_mode        { 10, TYPE_UINT8 }; 
+    static inline DynamixelAddress operating_mode    { 11, TYPE_UINT8 };
+    static inline DynamixelAddress shadow_id         { 12, TYPE_UINT8 }; 
     static inline DynamixelAddress homing_offset         { 20, TYPE_INT32 , UNIT_POSITION       };
     static inline DynamixelAddress moving_threshold      { 24, TYPE_UINT32, UNIT_VELOCITY       }; 
     static inline DynamixelAddress temperature_limit     { 31, TYPE_UINT8 , UNIT_TEMPERATURE    };
@@ -396,6 +396,11 @@ struct AddrX : AddrCommon{
 // dynamixel P series (old: pro plus)
 struct AddrP : AddrCommon {
     static inline DynamixelSeries series() { return SERIES_P;}
+    static inline DynamixelAddress baudrate          {  8, TYPE_UINT8 };
+    static inline DynamixelAddress return_delay_time {  9, TYPE_UINT8 , UNIT_RETURN_DELAY_TIME};
+    static inline DynamixelAddress drive_mode        { 10, TYPE_UINT8 }; 
+    static inline DynamixelAddress operating_mode    { 11, TYPE_UINT8 };
+    static inline DynamixelAddress shadow_id         { 12, TYPE_UINT8 }; 
     static inline DynamixelAddress homing_offset         { 20, TYPE_INT32 , UNIT_POSITION    };
     static inline DynamixelAddress moving_threshold      { 24, TYPE_UINT32, UNIT_VELOCITY    };
     static inline DynamixelAddress temperature_limit     { 31, TYPE_UINT8 , UNIT_TEMPERATURE };
@@ -454,7 +459,10 @@ struct AddrP : AddrCommon {
 
 // dynamixel Pro series
 struct AddrPro : AddrCommon {
-    static inline DynamixelSeries series() { return SERIES_PRO;}
+    static inline DynamixelSeries series() { return SERIES_PRO;}    
+    static inline DynamixelAddress baudrate          {  8, TYPE_UINT8 };
+    static inline DynamixelAddress return_delay_time {  9, TYPE_UINT8 , UNIT_RETURN_DELAY_TIME};
+    static inline DynamixelAddress operating_mode    { 11, TYPE_UINT8 };
     static inline DynamixelAddress homing_offset         { 13, TYPE_INT32 , UNIT_POSITION    };
     static inline DynamixelAddress moving_threshold      { 17, TYPE_UINT32, UNIT_VELOCITY    };
     static inline DynamixelAddress temperature_limit     { 21, TYPE_UINT8 , UNIT_TEMPERATURE };
