@@ -350,7 +350,6 @@ struct AddrX : AddrCommon{
     static inline DynamixelAddress min_voltage_limit     { 34, TYPE_UINT16, UNIT_VOLTAGE        };
     static inline DynamixelAddress pwm_limit             { 36, TYPE_UINT16, UNIT_PWM            };
     static inline DynamixelAddress current_limit         { 38, TYPE_UINT16, UNIT_CURRENT        };
-    static inline DynamixelAddress acceleration_limit    { 40, TYPE_UINT32, UNIT_ACCELERATION   }; // e-manualには存在しない．Pシリーズとの一貫性のため，また，なぜか読み書きできるため，追加した． UNIT_NANにし他方がいいかも...
     static inline DynamixelAddress velocity_limit        { 44, TYPE_UINT32, UNIT_VELOCITY       };
     static inline DynamixelAddress max_position_limit    { 48, TYPE_UINT32, UNIT_POSITION_OFFSET};
     static inline DynamixelAddress min_position_limit    { 52, TYPE_UINT32, UNIT_POSITION_OFFSET};
@@ -391,6 +390,8 @@ struct AddrX : AddrCommon{
     static inline DynamixelAddress external_port_data_1  {152, TYPE_UINT16};
     static inline DynamixelAddress external_port_data_2  {154, TYPE_UINT16};
     static inline DynamixelAddress external_port_data_3  {156, TYPE_UINT16};
+    // 共通化のための小細工
+    static inline auto acceleration_limit = DynamixelAddress(40, TYPE_UINT32, UNIT_ACCELERATION ).make_dummy(); // e-manualには存在しない．Pシリーズとの一貫性のため，また，なぜか読み書きできるため，追加した． UNIT_NANにし他方がいいかも...
 };// 以後Indirect Address, うまく実装して取り込みたい．
 
 // dynamixel P series (old: pro plus)
@@ -505,20 +506,20 @@ struct AddrPro : AddrCommon {
     static inline DynamixelAddress status_return_level   {891, TYPE_UINT8 };
     static inline DynamixelAddress hardware_error_status {892, TYPE_UINT8 };
     // 共通化のための小細工
-    static inline DynamixelAddress pwm_limit            = torque_limit.make_dummy();
-    static inline DynamixelAddress current_limit        = torque_limit;
-    static inline DynamixelAddress goal_current         = goal_torque;
-    static inline DynamixelAddress goal_pwm             = goal_torque.make_dummy();
-    static inline DynamixelAddress profile_velocity     = goal_velocity;
-    static inline DynamixelAddress profile_acceleration = goal_acceleration;
-    static inline DynamixelAddress present_pwm          = present_position.make_dummy();
-    static inline DynamixelAddress velocity_trajectory  = present_velocity.make_dummy();
-    static inline DynamixelAddress position_trajectory  = present_position.make_dummy();
-    static inline DynamixelAddress position_d_gain      = position_p_gain.make_dummy();
-    static inline DynamixelAddress position_i_gain      = position_p_gain.make_dummy();
-    static inline DynamixelAddress feedforward_2nd_gain = position_p_gain.make_dummy();
-    static inline DynamixelAddress feedforward_1st_gain = position_p_gain.make_dummy();
-    static inline DynamixelAddress bus_watchdog         = DynamixelAddress(  0, TYPE_UINT8 , UNIT_BUS_WATCHDOG ).make_dummy();
+    static inline auto pwm_limit            = torque_limit.make_dummy();
+    static inline auto current_limit        = torque_limit;
+    static inline auto goal_current         = goal_torque;
+    static inline auto goal_pwm             = goal_torque.make_dummy();
+    static inline auto profile_velocity     = goal_velocity.make_dummy();
+    static inline auto profile_acceleration = goal_acceleration;
+    static inline auto present_pwm          = present_position.make_dummy();
+    static inline auto velocity_trajectory  = present_velocity.make_dummy();
+    static inline auto position_trajectory  = present_position.make_dummy();
+    static inline auto position_d_gain      = position_p_gain.make_dummy();
+    static inline auto position_i_gain      = position_p_gain.make_dummy();
+    static inline auto feedforward_2nd_gain = position_p_gain.make_dummy();
+    static inline auto feedforward_1st_gain = position_p_gain.make_dummy();
+    static inline auto bus_watchdog         = DynamixelAddress(  0, TYPE_UINT8 , UNIT_BUS_WATCHDOG ).make_dummy();
 };
 
 inline bool has_external_port(uint16_t model_num) {
