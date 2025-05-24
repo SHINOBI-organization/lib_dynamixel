@@ -387,7 +387,7 @@ struct AddrX : AddrCommon{
     static inline DynamixelAddress velocity_trajectory   {136, TYPE_INT32 , UNIT_VELOCITY       };
     static inline DynamixelAddress position_trajectory   {140, TYPE_INT32 , UNIT_POSITION_OFFSET};
     static inline DynamixelAddress present_input_voltage {144, TYPE_UINT16, UNIT_VOLTAGE        };
-    static inline DynamixelAddress present_temperture    {146, TYPE_UINT8 , UNIT_TEMPERATURE    };
+    static inline DynamixelAddress present_temperature   {146, TYPE_UINT8 , UNIT_TEMPERATURE    };
     static inline DynamixelAddress external_port_data_1  {152, TYPE_UINT16};
     static inline DynamixelAddress external_port_data_2  {154, TYPE_UINT16};
     static inline DynamixelAddress external_port_data_3  {156, TYPE_UINT16};
@@ -449,7 +449,7 @@ struct AddrP : AddrCommon {
     static inline DynamixelAddress velocity_trajectory   {584, TYPE_INT32 , UNIT_VELOCITY   };
     static inline DynamixelAddress position_trajectory   {588, TYPE_INT32 , UNIT_POSITION   };
     static inline DynamixelAddress present_input_voltage {592, TYPE_UINT16, UNIT_VOLTAGE    };
-    static inline DynamixelAddress present_temperture    {594, TYPE_UINT8 , UNIT_TEMPERATURE};
+    static inline DynamixelAddress present_temperature   {594, TYPE_UINT8 , UNIT_TEMPERATURE};
     static inline DynamixelAddress external_port_data_1  {600, TYPE_UINT16};
     static inline DynamixelAddress external_port_data_2  {602, TYPE_UINT16};
     static inline DynamixelAddress external_port_data_3  {604, TYPE_UINT16};
@@ -495,7 +495,7 @@ struct AddrPro : AddrCommon {
     static inline DynamixelAddress present_velocity      {615, TYPE_INT32 , UNIT_VELOCITY    };
     static inline DynamixelAddress present_current       {621, TYPE_INT16 , UNIT_CURRENT     };
     static inline DynamixelAddress present_input_voltage {623, TYPE_UINT16, UNIT_VOLTAGE     };
-    static inline DynamixelAddress present_temperture    {625, TYPE_UINT8 , UNIT_TEMPERATURE };
+    static inline DynamixelAddress present_temperature   {625, TYPE_UINT8 , UNIT_TEMPERATURE };
     static inline DynamixelAddress external_port_data_1  {626, TYPE_UINT16};
     static inline DynamixelAddress external_port_data_2  {628, TYPE_UINT16};
     static inline DynamixelAddress external_port_data_3  {630, TYPE_UINT16};
