@@ -392,6 +392,8 @@ struct AddrX : AddrCommon{
     static inline DynamixelAddress external_port_data_3  {156, TYPE_UINT16};
     // 共通化のための小細工
     static inline auto acceleration_limit = DynamixelAddress(40, TYPE_UINT32, UNIT_ACCELERATION ).make_dummy(); // e-manualには存在しない．Pシリーズとの一貫性のため，また，なぜか読み書きできるため，追加した． UNIT_NANにし他方がいいかも...
+    static inline auto external_port_mode_4 = external_port_mode_3.make_dummy(); // Xシリーズには存在しないが，Pシリーズとの一貫性のために追加．
+    static inline auto external_port_data_4 = external_port_data_3.make_dummy(); // Xシリーズには存在しないが，Pシリーズとの一貫性のために追加．
 };// 以後Indirect Address, うまく実装して取り込みたい．
 
 // dynamixel P series (old: pro plus)
