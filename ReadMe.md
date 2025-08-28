@@ -52,8 +52,10 @@ ROS1に組み込んだものが[こちら](https://github.com/SHINOBI-organizati
 - `bool` `hardware_error_last_read()`
 - `vector<id_t>` `hardware_error_id_last_read()`
 
+## Address Map
+src/dynamixel_parameters.h に記載のあるパラメータ/アドレスが，現在対応しているDynamixelになります．
 
-## 詳細説明
+## API の 詳細説明
 
 ### `DynamixelCommunicator()`
 
