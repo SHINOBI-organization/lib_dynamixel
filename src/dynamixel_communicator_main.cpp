@@ -932,10 +932,10 @@ vector<int64_t> DynamixelCommunicator::Read(const vector<DynamixelAddress>& dp_l
         return vector<int64_t>();
     }
     // 読み込むデータの範囲を決定, 連続していなくても許容
-    vector<DynamixelAddress> dp_list_sorted = dp_list;
-    sort(dp_list_sorted.begin(), dp_list_sorted.end(), [](const DynamixelAddress& a, const DynamixelAddress& b) { return a.address() < b.address(); });
-    DynamixelAddress dp_min = *dp_list_sorted.begin();
-    DynamixelAddress dp_max = *dp_list_sorted.rbegin();
+    auto [dp_min_it, dp_max_it] = minmax_element(dp_list.begin(), dp_list.end(),
+        [](const DynamixelAddress& a, const DynamixelAddress& b){ return a.address() < b.address(); });
+    DynamixelAddress dp_min = *dp_min_it;
+    DynamixelAddress dp_max = *dp_max_it;
     auto size_total_dp = dp_max.address() + dp_max.size() - dp_min.address();
 
     // instruction packetを作成
@@ -1051,10 +1051,10 @@ map<uint8_t, vector<int64_t>> DynamixelCommunicator::SyncRead(const vector<Dynam
     }
     if (servo_id_list.empty() || dp_list.empty()) return map<uint8_t, vector<int64_t>>();
     // 読み込むデータの範囲を決定, 連続していなくても許容
-    vector<DynamixelAddress> dp_list_sorted = dp_list;
-    sort(dp_list_sorted.begin(), dp_list_sorted.end(), [](const DynamixelAddress& a, const DynamixelAddress& b) { return a.address() < b.address(); });
-    DynamixelAddress dp_min = *dp_list_sorted.begin();
-    DynamixelAddress dp_max = *dp_list_sorted.rbegin();
+    auto [dp_min_it, dp_max_it] = minmax_element(dp_list.begin(), dp_list.end(),
+        [](const DynamixelAddress& a, const DynamixelAddress& b){ return a.address() < b.address(); });
+    DynamixelAddress dp_min = *dp_min_it;
+    DynamixelAddress dp_max = *dp_max_it;
     auto size_total_dp = dp_max.address() + dp_max.size() - dp_min.address();
 
     const size_t num_servo = servo_id_list.size();
@@ -1190,10 +1190,10 @@ map<uint8_t, vector<int64_t>> DynamixelCommunicator::SyncRead_fast(const vector<
         return map<uint8_t, vector<int64_t>>();
     }    
     // 読み込むデータの範囲を決定, 連続していなくても許容
-    vector<DynamixelAddress> dp_list_sorted = dp_list;
-    sort(dp_list_sorted.begin(), dp_list_sorted.end(), [](const DynamixelAddress& a, const DynamixelAddress& b) { return a.address() < b.address(); });
-    DynamixelAddress dp_min = *dp_list_sorted.begin();
-    DynamixelAddress dp_max = *dp_list_sorted.rbegin();
+    auto [dp_min_it, dp_max_it] = minmax_element(dp_list.begin(), dp_list.end(),
+        [](const DynamixelAddress& a, const DynamixelAddress& b){ return a.address() < b.address(); });
+    DynamixelAddress dp_min = *dp_min_it;
+    DynamixelAddress dp_max = *dp_max_it;
     auto size_total_dp = dp_max.address() + dp_max.size() - dp_min.address();
 
 	uint8_t send_data[64] = {0}; // 読み込むサーボの数によって変わるが， 50+14=64 50サーボに同時に読み込むことはないので十分 
@@ -1324,7 +1324,7 @@ bool DynamixelCommunicator::SyncWrite(const vector<DynamixelAddress>& dp_list_so
     if(verbose_) printf("Sync Write Error(mismatch servo and data_vec num): servo num=%d, data_vec num=%d\n", (int)servo_id_list.size(), (int)data_vec_list.size());
     return false;
   }
-  for (auto data_vec : data_vec_list) if ( dp_list_sorted.size() != data_vec.size() ) {
+  for (const auto& data_vec : data_vec_list) if ( dp_list_sorted.size() != data_vec.size() ) {
     if(verbose_) printf("Sync Write Error(mismatch param and data num): param num=%d, data num=%d\n", (int)servo_id_list.size(), (int)data_vec.size());
     return false;
   }
