@@ -29,6 +29,23 @@ static const uint8_t COM_ERROR_DATA_LIMIT  = 5;
 static const uint8_t COM_ERROR_ACCESS      = 6;
 static const uint8_t COM_ERROR_ALERT       = 7;
 
+namespace {
+inline void clear_port_with_drain(PortHandler* port_handler) {
+  uint8_t discard[256];
+  while (true) {
+    const int available = port_handler->getBytesAvailable();
+    if (available <= 0) {
+      break;
+    }
+    const int n = port_handler->readPort(
+        discard, std::min(available, static_cast<int>(sizeof(discard))));
+    if (n <= 0) {
+      break;
+    }
+  }
+}
+}  // namespace
+
 uint16_t DynamixelCommunicator::CalcChecksum(uint8_t data[], uint8_t length) {
   uint16_t crc_accum = 0;
   uint16_t i;
@@ -233,7 +250,7 @@ void DynamixelCommunicator::Reboot(uint8_t servo_id) {
   uint16_t sum = CalcChecksum(send_data, 8);
   send_data[8] = sum & 0xFF;
   send_data[9] = (sum>>8) & 0xFF;
-  port_handler_->clearPort();
+  clear_port_with_drain(port_handler_);
   port_handler_->writePort(send_data, 10);
 
   if (status_return_level_ != 2) return;
@@ -300,7 +317,7 @@ bool DynamixelCommunicator::Ping(uint8_t servo_id) {
   uint16_t sum = CalcChecksum(send_data, 8);
   send_data[8] = sum & 0xFF;
   send_data[9] = (sum>>8) & 0xFF;
-  port_handler_->clearPort();
+  clear_port_with_drain(port_handler_);
   port_handler_->writePort(send_data, 10);
 
   port_handler_->setPacketTimeout( uint16_t(14) );
@@ -356,7 +373,7 @@ bool DynamixelCommunicator::Write(DynamixelAddress dp, uint8_t servo_id, int64_t
     send_data[10+dp.size()] = sum & 0xFF;
     send_data[11+dp.size()] = (sum>>8) & 0xFF;
 
-    port_handler_->clearPort();
+    clear_port_with_drain(port_handler_);
     port_handler_->writePort(send_data, 12+dp.size());
 
     if (status_return_level_ != 2) return true;
@@ -437,7 +454,7 @@ int64_t DynamixelCommunicator::Read(DynamixelAddress dp, uint8_t servo_id) {
             break;
         }
     }
-    port_handler_->clearPort();
+    clear_port_with_drain(port_handler_);
     port_handler_->writePort(send_data, 14);
 
     if (status_return_level_ == 0) return 0;
@@ -541,7 +558,7 @@ bool DynamixelCommunicator::SyncWrite(DynamixelAddress dp,  const vector<uint8_t
   send_data[12+num_servo*(dp.size()+1)] = sum & 0xFF;
   send_data[13+num_servo*(dp.size()+1)] = (sum>>8) & 0xFF;
 
-  port_handler_->clearPort();
+  clear_port_with_drain(port_handler_);
   port_handler_->writePort(send_data, 14+num_servo*(dp.size()+1));
   return true;
 }
@@ -602,7 +619,7 @@ map<uint8_t, int64_t> DynamixelCommunicator::SyncRead( DynamixelAddress dp, cons
             break;
         }
     }
-    port_handler_->clearPort();
+    clear_port_with_drain(port_handler_);
     port_handler_->writePort(send_data, 14+num_servo);
 
     // データ読み込みの処理
@@ -711,7 +728,7 @@ map<uint8_t, int64_t> DynamixelCommunicator::SyncRead_fast(DynamixelAddress dp, 
             break;
         }
     }
-	port_handler_->clearPort();
+	clear_port_with_drain(port_handler_);
 	port_handler_->writePort(send_data, 14+num_servo);
 
     // データ読み込みの処理
@@ -831,7 +848,7 @@ bool DynamixelCommunicator::Write(const vector<DynamixelAddress>& dp_list_sorted
     send_data[10+size_total_dp] = sum & 0xFF;
     send_data[11+size_total_dp] = (sum>>8) & 0xFF;
 
-    port_handler_->clearPort();
+    clear_port_with_drain(port_handler_);
     port_handler_->writePort(send_data, 12+size_total_dp);
 
     if (status_return_level_ != 2) return true;
@@ -922,7 +939,7 @@ vector<int64_t> DynamixelCommunicator::Read(const vector<DynamixelAddress>& dp_l
             break;
         }
     }
-    port_handler_->clearPort();
+    clear_port_with_drain(port_handler_);
     port_handler_->writePort(send_data, 14);
 
     if (status_return_level_ == 0) return vector<int64_t>(dp_list.size(), 0); 
@@ -1041,7 +1058,7 @@ map<uint8_t, vector<int64_t>> DynamixelCommunicator::SyncRead(const vector<Dynam
             break;
         }
     }
-    port_handler_->clearPort();
+    clear_port_with_drain(port_handler_);
     port_handler_->writePort(send_data, 14+num_servo);
 
     // if(verbose_) {printf("write:" ); for (size_t i=0; i<14+num_servo; i++) printf("%02X ", send_data[i]); printf("\n");}
@@ -1166,7 +1183,7 @@ map<uint8_t, vector<int64_t>> DynamixelCommunicator::SyncRead_fast(const vector<
             break;
         }
     }
-	port_handler_->clearPort();
+	clear_port_with_drain(port_handler_);
 	port_handler_->writePort(send_data, 14+num_servo);
 
     // データ読み込みの処理
@@ -1312,7 +1329,7 @@ bool DynamixelCommunicator::SyncWrite(const vector<DynamixelAddress>& dp_list_so
   send_data[12+num_servo*(size_total_dp+1)] = sum & 0xFF;
   send_data[13+num_servo*(size_total_dp+1)] = (sum>>8) & 0xFF;
 
-  port_handler_->clearPort();
+  clear_port_with_drain(port_handler_);
   port_handler_->writePort(send_data, 14+num_servo*(size_total_dp+1));
   return true;
 }
