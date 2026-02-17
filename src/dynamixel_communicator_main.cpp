@@ -541,8 +541,8 @@ bool DynamixelCommunicator::SyncWrite(DynamixelAddress dp,  const vector<uint8_t
     return false;
   }
   uint8_t send_data[514] = {0}; // 書き込むサーボの数によって変わるが， dp.size()は最大4 (4+1)*100+14=514 100サーボに同時に4バイト書き込むことはないので十分
-  int8_t num_servo = servo_id_list.size();
-  uint16_t length = (1+dp.size())*num_servo+7;
+  const size_t num_servo = servo_id_list.size();
+  uint16_t length = static_cast<uint16_t>((1+dp.size())*num_servo+7);
   send_data[0] = HEADER[0];
   send_data[1] = HEADER[1];
   send_data[2] = HEADER[2];
@@ -555,10 +555,10 @@ bool DynamixelCommunicator::SyncWrite(DynamixelAddress dp,  const vector<uint8_t
   send_data[9] = (dp.address()>>8) & 0xFF;
   send_data[10] = dp.size() & 0xFF;
   send_data[11] = (dp.size()>>8) & 0xFF;
-  for(int i_servo=0; i_servo<num_servo; i_servo++) {
+  for(size_t i_servo=0; i_servo<num_servo; i_servo++) {
     send_data[12+i_servo*(dp.size()+1)] = servo_id_list[i_servo];
     EncodeDataWrite(dp.data_type(), data_int_list[i_servo]);
-    for(int i_data=0; i_data<dp.size(); i_data++) {
+    for(size_t i_data=0; i_data<dp.size(); i_data++) {
       send_data[12+i_servo*(dp.size()+1)+1+i_data] = data_write_[i_data];
     }
   }
@@ -600,8 +600,8 @@ map<uint8_t, int64_t> DynamixelCommunicator::SyncRead( DynamixelAddress dp, cons
     }
     if (servo_id_list.empty()) return map<uint8_t, int64_t>();
     uint8_t send_data[114] = {0}; // 読み込むサーボの数によって変わるが， 100+14=114 100サーボに同時に読み込むことはないので十分
-    uint8_t num_servo = servo_id_list.size();
-    uint16_t length = num_servo+7;
+    const size_t num_servo = servo_id_list.size();
+    uint16_t length = static_cast<uint16_t>(num_servo+7);
     send_data[0] = HEADER[0];
     send_data[1] = HEADER[1];
     send_data[2] = HEADER[2];
@@ -614,7 +614,7 @@ map<uint8_t, int64_t> DynamixelCommunicator::SyncRead( DynamixelAddress dp, cons
     send_data[9] = (dp.address()>>8) & 0xFF;
     send_data[10] = dp.size() & 0xFF;
     send_data[11] = (dp.size()>>8) & 0xFF;
-    for(int i_servo=0; i_servo<num_servo; i_servo++) {
+    for(size_t i_servo=0; i_servo<num_servo; i_servo++) {
         send_data[12+i_servo] = servo_id_list[i_servo];
     }
     uint16_t sum = CalcChecksum(send_data, 12+num_servo);
@@ -656,7 +656,7 @@ map<uint8_t, int64_t> DynamixelCommunicator::SyncRead( DynamixelAddress dp, cons
     if (bytes_to_read <= 0) return id_data_int_map;
 
     std::vector<uint8_t> read_data(bytes_to_read, 0);
-    int8_t read_length = port_handler_->readPort(read_data.data(), bytes_to_read);
+    int read_length = port_handler_->readPort(read_data.data(), bytes_to_read);
     if (read_length == -1) {
         if(verbose_) printf("Sync Read Error(read port)\n");
         comm_error_last_read_ = true;
@@ -664,7 +664,7 @@ map<uint8_t, int64_t> DynamixelCommunicator::SyncRead( DynamixelAddress dp, cons
     }
 
     const int num_packets_read = read_length / packet_len;
-    if (num_packets_read < num_servo) {
+    if (num_packets_read < static_cast<int>(num_servo)) {
         timeout_last_read_ = true;
         deficient_byte_ = expected_len - read_length;
     }
@@ -722,8 +722,8 @@ map<uint8_t, int64_t> DynamixelCommunicator::SyncRead_fast(DynamixelAddress dp, 
         return map<uint8_t, int64_t>();
     }
 	uint8_t send_data[64] = {0}; // 読み込むサーボの数によって変わるが， 50+14=64 50サーボに同時に読み込むことはないので十分
-	uint8_t num_servo = servo_id_list.size();
-	uint16_t length = num_servo+7;
+	const size_t num_servo = servo_id_list.size();
+	uint16_t length = static_cast<uint16_t>(num_servo+7);
 	send_data[0] = HEADER[0];
 	send_data[1] = HEADER[1];
 	send_data[2] = HEADER[2];
@@ -736,7 +736,7 @@ map<uint8_t, int64_t> DynamixelCommunicator::SyncRead_fast(DynamixelAddress dp, 
 	send_data[9] = (dp.address()>>8) & 0xFF;
 	send_data[10] = dp.size() & 0xFF;
 	send_data[11] = (dp.size()>>8) & 0xFF;
-	for(int i_servo=0; i_servo<num_servo; i_servo++) {
+	for(size_t i_servo=0; i_servo<num_servo; i_servo++) {
 		send_data[12+i_servo] = servo_id_list[i_servo];
 	}
 	uint16_t sum = CalcChecksum(send_data, 12+num_servo);
@@ -771,7 +771,7 @@ map<uint8_t, int64_t> DynamixelCommunicator::SyncRead_fast(DynamixelAddress dp, 
 
 	// パケットの読み込み
     uint8_t read_data[408]; // 読み込むサーボとデータサイズによって変わるが， (4+4)*50+8=408 100サーボに同時に読み込むことはないので十分
-    int8_t read_length = port_handler_->readPort(read_data, length_read_data);
+    int read_length = port_handler_->readPort(read_data, length_read_data);
     // 全体のエラーチェック
     comm_error_last_read_ = false;
     if (read_length == -1) {
@@ -796,7 +796,7 @@ map<uint8_t, int64_t> DynamixelCommunicator::SyncRead_fast(DynamixelAddress dp, 
     hardware_error_last_read_ = false;
     hardware_error_id_last_read_.clear();
     map<uint8_t, int64_t> id_data_int_map;
-	for(int i_servo=0; i_servo<num_servo; i_servo++) {
+	for(size_t i_servo=0; i_servo<num_servo; i_servo++) {
 		uint8_t id = (uint8_t)read_data[9 + i_servo*length_a_servo]; // servo id
         if ( id != servo_id_list[i_servo] ) {
             if(verbose_) printf("Fast Sync Read Error(packet id) : expected %d return %d\n", servo_id_list[i_servo], id);
@@ -1057,9 +1057,9 @@ map<uint8_t, vector<int64_t>> DynamixelCommunicator::SyncRead(const vector<Dynam
     DynamixelAddress dp_max = *dp_list_sorted.rbegin();
     auto size_total_dp = dp_max.address() + dp_max.size() - dp_min.address();
 
-    uint8_t num_servo = servo_id_list.size();
+    const size_t num_servo = servo_id_list.size();
     uint8_t send_data[114] = {0}; // 読み込むサーボの数によって変わるが， 100+14=114 100サーボに同時に読み込むことはないので十分
-    uint16_t length = num_servo+7;
+    uint16_t length = static_cast<uint16_t>(num_servo+7);
     send_data[0] = HEADER[0];
     send_data[1] = HEADER[1];
     send_data[2] = HEADER[2];
@@ -1072,7 +1072,7 @@ map<uint8_t, vector<int64_t>> DynamixelCommunicator::SyncRead(const vector<Dynam
     send_data[9] = (dp_min.address()>>8) & 0xFF;
     send_data[10] = size_total_dp & 0xFF;
     send_data[11] = (size_total_dp>>8) & 0xFF;
-    for(int i_servo=0; i_servo<num_servo; i_servo++) {
+    for(size_t i_servo=0; i_servo<num_servo; i_servo++) {
         send_data[12+i_servo] = servo_id_list[i_servo];
     }
     uint16_t sum = CalcChecksum(send_data, 12+num_servo);
@@ -1116,7 +1116,7 @@ map<uint8_t, vector<int64_t>> DynamixelCommunicator::SyncRead(const vector<Dynam
     if (bytes_to_read <= 0) return id_data_vec_map;
 
     std::vector<uint8_t> read_data(bytes_to_read, 0);
-    int8_t read_length = port_handler_->readPort(read_data.data(), bytes_to_read);
+    int read_length = port_handler_->readPort(read_data.data(), bytes_to_read);
     if (read_length == -1) {
         if(verbose_) printf("Sync Read Error(read port)\n");
         comm_error_last_read_ = true;
@@ -1124,7 +1124,7 @@ map<uint8_t, vector<int64_t>> DynamixelCommunicator::SyncRead(const vector<Dynam
     }
 
     const int num_packets_read = read_length / packet_len;
-    if (num_packets_read < num_servo) {
+    if (num_packets_read < static_cast<int>(num_servo)) {
         timeout_last_read_ = true;
         deficient_byte_ = expected_len - read_length;
     }
@@ -1197,8 +1197,8 @@ map<uint8_t, vector<int64_t>> DynamixelCommunicator::SyncRead_fast(const vector<
     auto size_total_dp = dp_max.address() + dp_max.size() - dp_min.address();
 
 	uint8_t send_data[64] = {0}; // 読み込むサーボの数によって変わるが， 50+14=64 50サーボに同時に読み込むことはないので十分 
-	uint8_t num_servo = servo_id_list.size();
-	uint16_t length = num_servo+7;
+	const size_t num_servo = servo_id_list.size();
+	uint16_t length = static_cast<uint16_t>(num_servo+7);
 	send_data[0] = HEADER[0];
 	send_data[1] = HEADER[1];
 	send_data[2] = HEADER[2];
@@ -1211,7 +1211,7 @@ map<uint8_t, vector<int64_t>> DynamixelCommunicator::SyncRead_fast(const vector<
 	send_data[9] = (dp_min.address()>>8) & 0xFF;
 	send_data[10] = size_total_dp & 0xFF;
 	send_data[11] = (size_total_dp>>8) & 0xFF;
-	for(int i_servo=0; i_servo<num_servo; i_servo++) {
+	for(size_t i_servo=0; i_servo<num_servo; i_servo++) {
 		send_data[12+i_servo] = servo_id_list[i_servo];
 	}
 	uint16_t sum = CalcChecksum(send_data, 12+num_servo);
@@ -1246,7 +1246,7 @@ map<uint8_t, vector<int64_t>> DynamixelCommunicator::SyncRead_fast(const vector<
 
 	// パケットの読み込み
     uint8_t read_data[1458]; // 読み込むサーボとデータサイズによって変わるが， 最大でも同時読み込みしたいアドレスの幅は25程度なので，(25+4)*50+8=1458;
-    int8_t read_length = port_handler_->readPort(read_data, length_read_data);
+    int read_length = port_handler_->readPort(read_data, length_read_data);
 
     // if(verbose_) {printf("write:" ); for (size_t i=0; i<14+num_servo; i++) printf("%02X ", send_data[i]); printf("\n");}
     // if(verbose_) {printf("read:" ); for (size_t i=0; i<read_length; i++) printf("%02X ", read_data[i]); printf("\n");}
@@ -1277,7 +1277,7 @@ map<uint8_t, vector<int64_t>> DynamixelCommunicator::SyncRead_fast(const vector<
     hardware_error_last_read_ = false;
     hardware_error_id_last_read_.clear();
     map<uint8_t, vector<int64_t>> id_data_vec_map;
-	for(int i_servo=0; i_servo<num_servo; i_servo++) {
+	for(size_t i_servo=0; i_servo<num_servo; i_servo++) {
 		uint8_t id = (uint8_t)read_data[9 + i_servo*length_a_servo]; // servo id
         if ( id != servo_id_list[i_servo] ) {
             if(verbose_) printf("Fast Sync Read Error(packet id) : expected %d, return %d\n", servo_id_list[i_servo], id);
@@ -1343,8 +1343,8 @@ bool DynamixelCommunicator::SyncWrite(const vector<DynamixelAddress>& dp_list_so
   }
   auto size_total_dp = dp_max.address() + dp_max.size() - dp_min.address();
   uint8_t send_data[1314] = {0}; // 書き込むdpの数とサイズとサーボの数によって変わるが， 最大でも同時読み込みしたいアドレスの幅は25程度なので，(25+1)*50+14=1314
-  int8_t num_servo = servo_id_list.size();
-  uint16_t length = (1+size_total_dp)*num_servo+7;
+  const size_t num_servo = servo_id_list.size();
+  uint16_t length = static_cast<uint16_t>((1+size_total_dp)*num_servo+7);
   send_data[0] = HEADER[0];
   send_data[1] = HEADER[1];
   send_data[2] = HEADER[2];
@@ -1357,13 +1357,13 @@ bool DynamixelCommunicator::SyncWrite(const vector<DynamixelAddress>& dp_list_so
   send_data[9] = (dp_min.address()>>8) & 0xFF;
   send_data[10] = size_total_dp & 0xFF;
   send_data[11] = (size_total_dp>>8) & 0xFF;
-  for(int i_servo=0; i_servo<num_servo; i_servo++) {
+  for(size_t i_servo=0; i_servo<num_servo; i_servo++) {
     send_data[12+i_servo*(size_total_dp+1)] = servo_id_list[i_servo];
     for (size_t i_dp=0; i_dp<dp_list_sorted.size(); i_dp++) {
       const DynamixelAddress& dp = dp_list_sorted[i_dp];
       uint8_t index = dp.address() - dp_min.address();
       EncodeDataWrite(dp.data_type(), data_vec_list[i_servo][i_dp]);
-      for(int i_data=0; i_data<dp.size(); i_data++) {
+      for(size_t i_data=0; i_data<dp.size(); i_data++) {
         send_data[12+i_servo*(size_total_dp+1)+1+index+i_data] = data_write_[i_data];
       }
     }
