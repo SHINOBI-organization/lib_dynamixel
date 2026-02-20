@@ -73,7 +73,7 @@ class DynamixelCommunicator {
         vector<int64_t> tryRead (const vector<DynamixelAddress>&, uint8_t);
         
     private:
-        uint16_t CalcChecksum(uint8_t data[], uint8_t length);
+        static uint16_t CalcChecksum(const uint8_t* data, size_t length);
         void   EncodeDataWrite(DynamixelDataType type, int64_t data_int);
         int64_t DecodeDataRead(DynamixelDataType type);
 

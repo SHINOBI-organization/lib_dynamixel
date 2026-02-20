@@ -48,9 +48,8 @@ inline void clear_port_with_drain(PortHandler* port_handler) {
 }
 }  // namespace
 
-uint16_t DynamixelCommunicator::CalcChecksum(uint8_t data[], uint8_t length) {
+uint16_t DynamixelCommunicator::CalcChecksum(const uint8_t* data, size_t length) {
   uint16_t crc_accum = 0;
-  uint16_t i;
   static constexpr uint16_t crc_table[256] = {0x0000,
   0x8005, 0x800F, 0x000A, 0x801B, 0x001E, 0x0014, 0x8011,
   0x8033, 0x0036, 0x003C, 0x8039, 0x0028, 0x802D, 0x8027,
@@ -90,8 +89,8 @@ uint16_t DynamixelCommunicator::CalcChecksum(uint8_t data[], uint8_t length) {
   0x0234, 0x8231, 0x8213, 0x0216, 0x021C, 0x8219, 0x0208,
   0x820D, 0x8207, 0x0202 };
 
-  for (uint16_t j = 0; j < length; j++) {
-    i = ((uint16_t)(crc_accum >> 8) ^ data[j]) & 0xFF;
+  for (size_t j = 0; j < length; j++) {
+    const uint16_t i = ((uint16_t)(crc_accum >> 8) ^ data[j]) & 0xFF;
     crc_accum = (crc_accum << 8) ^ crc_table[i];
   }
 
