@@ -81,7 +81,7 @@ class DynamixelCommunicator {
         PortHandler *port_handler_;
         uint32_t baudrate_;
         uint8_t latency_timer_ = 16;
-        uint8_t status_return_level_ = 2;
+        uint8_t status_return_level_ = STATUS_RETURN_LEVEL_ALL;
         uint8_t  data_write_[4];
         uint8_t  data_read_[4];
 
