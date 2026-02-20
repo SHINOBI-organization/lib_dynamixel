@@ -1,7 +1,9 @@
 #include "dynamixel_communicator.h"
 #include <stdio.h>
 #include <thread>
+using std::this_thread::sleep_for;
 #include <chrono>
+using namespace std::chrono_literals;
 
 // #define DXL_LOBYTE(w) ((uint8_t)(((uint64_t)(w)) & 0xff))
 // #define DXL_HIBYTE(w) ((uint8_t)((((uint64_t)(w)) >> 8) & 0xff))
@@ -157,27 +159,23 @@ int64_t DynamixelCommunicator::DecodeDataRead(DynamixelDataType type) {
       int8_t data_int = 0;
       data_int |= data_read_[0] << 0;
       return int64_t(data_int);
-      break;
     }
     case TYPE_UINT8 : {
       uint8_t data_int = 0;
       data_int |= data_read_[0] << 0;
       return int64_t(data_int);
-      break;
     }
     case TYPE_INT16 : {
       int16_t data_int = 0;
       data_int |= data_read_[0] << 0;
       data_int |= data_read_[1] << 8;
       return int64_t(data_int);
-      break;
     }
     case TYPE_UINT16 :  {
       uint16_t data_int = 0;
       data_int |= data_read_[0] << 0;
       data_int |= data_read_[1] << 8;
       return int64_t(data_int);
-      break;
     }
     case TYPE_INT32 : {
       int32_t data_int = 0;
@@ -186,7 +184,6 @@ int64_t DynamixelCommunicator::DecodeDataRead(DynamixelDataType type) {
       data_int |= data_read_[2] << 16;
       data_int |= data_read_[3] << 24;
       return int64_t(data_int);
-      break;
     }
     case TYPE_UINT32 : {
       uint32_t data_int = 0;
@@ -195,7 +192,6 @@ int64_t DynamixelCommunicator::DecodeDataRead(DynamixelDataType type) {
       data_int |= data_read_[2] << 16;
       data_int |= data_read_[3] << 24;
       return int64_t(data_int);
-      break;
     }
   }
   return 0;
@@ -264,7 +260,7 @@ void DynamixelCommunicator::Reboot(uint8_t servo_id) {
       timeout_last_read_ = true;
       return;
     }
-    std::this_thread::sleep_for(std::chrono::microseconds(20));
+    sleep_for(20us);
   }
 
   uint8_t read_data[11];
@@ -328,11 +324,11 @@ bool DynamixelCommunicator::Ping(uint8_t servo_id) {
         if(verbose_) printf("Ping Error(time out): ID %d, available bytes %d\n", servo_id, port_handler_->getBytesAvailable());
         return false;
     }
-    std::this_thread::sleep_for(std::chrono::microseconds(20));
+    sleep_for(20us);
   }
 
   uint8_t read_data[14];
-  uint8_t read_length = port_handler_->readPort(read_data, 14);
+  int read_length = port_handler_->readPort(read_data, 14);
     if (read_length != 14) {
         if(verbose_) printf("Ping Error(no data): ID %d, data_length = %d\n", servo_id, read_length);
         return false;
@@ -390,7 +386,7 @@ bool DynamixelCommunicator::Write(DynamixelAddress dp, uint8_t servo_id, int64_t
         timeout_last_read_ = true;
         return false;
         }
-        std::this_thread::sleep_for(std::chrono::microseconds(20));
+        sleep_for(20us);
     }
     uint8_t read_data[11]; // Writeのステータスパケットは固定で11
     port_handler_->readPort(read_data, 11);
@@ -458,7 +454,7 @@ int64_t DynamixelCommunicator::Read(DynamixelAddress dp, uint8_t servo_id) {
             if(verbose_) printf("Read Warn: clear buffer time out\n");
             break;
         }
-        std::this_thread::sleep_for(std::chrono::microseconds(20));
+        sleep_for(20us);
     }
     clear_port_with_drain(port_handler_);
     port_handler_->writePort(send_data, 14);
@@ -474,11 +470,11 @@ int64_t DynamixelCommunicator::Read(DynamixelAddress dp, uint8_t servo_id) {
             timeout_last_read_ = true;
             return 0;
         }
-        std::this_thread::sleep_for(std::chrono::microseconds(20));
+        sleep_for(20us);
     }
 
     uint8_t read_data[15]; // 11+dp.size()<=11+4=15より十分
-    uint8_t read_length = port_handler_->readPort(read_data, 11+dp.size());
+    int read_length = port_handler_->readPort(read_data, 11+dp.size());
 
     // if(verbose_) {printf("write:" ); for (size_t i=0; i<14; i++) printf("%02X ", send_data[i]); printf("\n");}
     // if(verbose_) {printf("read:" ); for (size_t i=0; i<15; i++) printf("%02X ", read_data[i]); printf("\n");}
@@ -626,7 +622,7 @@ map<uint8_t, int64_t> DynamixelCommunicator::SyncRead( DynamixelAddress dp, cons
             if(verbose_) printf("Sync Read Warn: clear buffer time out\n");
             break;
         }
-        std::this_thread::sleep_for(std::chrono::microseconds(20));
+        sleep_for(20us);
     }
     clear_port_with_drain(port_handler_);
     port_handler_->writePort(send_data, 14+num_servo);
@@ -648,7 +644,7 @@ map<uint8_t, int64_t> DynamixelCommunicator::SyncRead( DynamixelAddress dp, cons
             timeout_last_read_ = true;
             break;
         }
-        std::this_thread::sleep_for(std::chrono::microseconds(20));
+        sleep_for(20us);
     }
 
     const int bytes_to_read = std::min(port_handler_->getBytesAvailable(), expected_len);
@@ -748,7 +744,7 @@ map<uint8_t, int64_t> DynamixelCommunicator::SyncRead_fast(DynamixelAddress dp, 
             if(verbose_) printf("Sync Read fast Warn: clear buffer time out\n");
             break;
         }
-        std::this_thread::sleep_for(std::chrono::microseconds(20));
+        sleep_for(20us);
     }
 	clear_port_with_drain(port_handler_);
 	port_handler_->writePort(send_data, 14+num_servo);
@@ -765,7 +761,7 @@ map<uint8_t, int64_t> DynamixelCommunicator::SyncRead_fast(DynamixelAddress dp, 
             timeout_last_read_ = true;
             return map<uint8_t, int64_t>();
 		}
-        std::this_thread::sleep_for(std::chrono::microseconds(20));
+        sleep_for(20us);
 	}
 
 	// パケットの読み込み
@@ -885,7 +881,7 @@ bool DynamixelCommunicator::Write(const vector<DynamixelAddress>& dp_list_sorted
             timeout_last_read_ = true;
             return false;
         }
-        std::this_thread::sleep_for(std::chrono::microseconds(20));
+        sleep_for(20us);
     }
     uint8_t read_data[11]; //writeのステータスパケットは固定で11
     port_handler_->readPort(read_data, 11);
@@ -962,7 +958,7 @@ vector<int64_t> DynamixelCommunicator::Read(const vector<DynamixelAddress>& dp_l
             if(verbose_) printf("Read Warn: clear buffer time out\n");
             break;
         }
-        std::this_thread::sleep_for(std::chrono::microseconds(20));
+        sleep_for(20us);
     }
     clear_port_with_drain(port_handler_);
     port_handler_->writePort(send_data, 14);
@@ -979,11 +975,11 @@ vector<int64_t> DynamixelCommunicator::Read(const vector<DynamixelAddress>& dp_l
         timeout_last_read_ = true;
         return vector<int64_t>(dp_list.size(), 0); // これ以降すべての読み込みを諦める．
         }
-        std::this_thread::sleep_for(std::chrono::microseconds(20));
+        sleep_for(20us);
     }
 
     uint8_t read_data[51]; // 読み込むdpの数とサイズによって変わるが， 4*10+11=51 4バイトのデータ10個を同時に読み込むことはないので十分
-    uint8_t read_length = port_handler_->readPort(read_data, 11+size_total_dp);
+    int read_length = port_handler_->readPort(read_data, 11+size_total_dp);
     // エラーチェック
     comm_error_last_read_ = false;
     if (read_length != 11+size_total_dp) {
@@ -1084,7 +1080,7 @@ map<uint8_t, vector<int64_t>> DynamixelCommunicator::SyncRead(const vector<Dynam
             if(verbose_) printf("Sync Read Warn: clear buffer time out\n");
             break;
         }
-        std::this_thread::sleep_for(std::chrono::microseconds(20));
+        sleep_for(20us);
     }
     clear_port_with_drain(port_handler_);
     port_handler_->writePort(send_data, 14+num_servo);
@@ -1108,7 +1104,7 @@ map<uint8_t, vector<int64_t>> DynamixelCommunicator::SyncRead(const vector<Dynam
             timeout_last_read_ = true;
             break;
         }
-        std::this_thread::sleep_for(std::chrono::microseconds(20));
+        sleep_for(20us);
     }
 
     const int bytes_to_read = std::min(port_handler_->getBytesAvailable(), expected_len);
@@ -1223,7 +1219,7 @@ map<uint8_t, vector<int64_t>> DynamixelCommunicator::SyncRead_fast(const vector<
             if(verbose_) printf("Sync Read fast Warn: clear buffer time out\n");
             break;
         }
-        std::this_thread::sleep_for(std::chrono::microseconds(20));
+        sleep_for(20us);
     }
 	clear_port_with_drain(port_handler_);
 	port_handler_->writePort(send_data, 14+num_servo);
@@ -1240,7 +1236,7 @@ map<uint8_t, vector<int64_t>> DynamixelCommunicator::SyncRead_fast(const vector<
 		timeout_last_read_ = true;
 		return map<uint8_t, vector<int64_t>>();
 		}
-        std::this_thread::sleep_for(std::chrono::microseconds(20));
+        sleep_for(20us);
 	}
 
 	// パケットの読み込み
