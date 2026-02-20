@@ -134,6 +134,7 @@ PYBIND11_MODULE(_mylib_dynamixel, m) {
       .def("comm_error_last_read", &DynamixelCommunicator::comm_error_last_read)
       .def("hardware_error_last_read", &DynamixelCommunicator::hardware_error_last_read)
       .def("hardware_error_id_last_read", &DynamixelCommunicator::hardware_error_id_last_read)
+      .def("ping_id_model_map_last_read", &DynamixelCommunicator::ping_id_model_map_last_read)
       .def("set_retry_config", &DynamixelCommunicator::set_retry_config, py::arg("num_try"), py::arg("msec_interval"))
       .def("OpenPort", &DynamixelCommunicator::OpenPort)
       .def("ClosePort", &DynamixelCommunicator::ClosePort)

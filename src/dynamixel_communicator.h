@@ -39,6 +39,7 @@ class DynamixelCommunicator {
         bool comm_error_last_read(){ return comm_error_last_read_; }
         bool hardware_error_last_read(){ return hardware_error_last_read_; }
         vector<uint8_t> hardware_error_id_last_read(){ return hardware_error_id_last_read_; }
+        map<uint8_t, uint16_t> ping_id_model_map_last_read(){ return ping_id_model_map_last_read_; }
 
         void set_retry_config(int num_try, int msec_interval){
             num_try_ = std::max(num_try, 1);
@@ -50,6 +51,7 @@ class DynamixelCommunicator {
         void Reboot(uint8_t servo_id);
         void FactoryReset(uint8_t servo_id, FactoryResetLevel level);
         bool Ping(uint8_t servo_id);
+        bool Ping_broadcast();
 
         // パラメータ1つ
         bool Write    (DynamixelAddress, uint8_t               , int64_t               );
@@ -89,6 +91,7 @@ class DynamixelCommunicator {
         bool comm_error_last_read_     = false; // 直前の通信に何らかの異常が発生したことを示すフラグ
         bool hardware_error_last_read_ = false; // ハードウェアエラーの有無を示すフラグ status packetのerror部分から取得する
         vector<uint8_t> hardware_error_id_last_read_; // ハードウェアエラーが発生したサーボのIDリスト
+        map<uint8_t, uint16_t> ping_id_model_map_last_read_; // 直前のPingで取得した ID->model_number
         
         bool verbose_ = false;
         uint8_t num_try_       = 5;

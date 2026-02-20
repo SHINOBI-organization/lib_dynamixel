@@ -23,6 +23,7 @@ static constexpr uint8_t INSTRUCTION_BULK_WRITE     = 0x93;
 static constexpr uint8_t INSTRUCTION_FAST_BULK_READ = 0x9A;
 
 static constexpr uint8_t HEADER[4] = {0xFF, 0xFF, 0xFD, 0x00};
+static constexpr uint8_t BROADCAST_ID = 0xFE;
 
 static constexpr uint16_t HEADER_SIZE = 4;
 static constexpr uint16_t ID_SIZE = 1;
@@ -323,7 +324,54 @@ void DynamixelCommunicator::FactoryReset(uint8_t servo_id, FactoryResetLevel lev
  * @param uint8_t servo_id 対象のID
  * @return bool 応答があったかどうか
  */
+bool DynamixelCommunicator::Ping_broadcast() {
+  uint8_t send_data[COMMAND_TX_PACKET_SIZE] = {0};
+  uint16_t length = INSTRUCTION_SIZE + CRC_SIZE;
+  send_data[0] = HEADER[0];
+  send_data[1] = HEADER[1];
+  send_data[2] = HEADER[2];
+  send_data[3] = HEADER[3];
+  send_data[4] = BROADCAST_ID;
+  send_data[5] = length & 0xFF;
+  send_data[6] = (length>>8) & 0xFF;
+  send_data[7] = INSTRUCTION_PING;  // instruction
+  uint16_t sum = CalcChecksum(send_data, COMMAND_TX_PACKET_SIZE - CRC_SIZE);
+  send_data[8] = sum & 0xFF;
+  send_data[9] = (sum>>8) & 0xFF;
+  clear_port_with_drain(port_handler_);
+  port_handler_->writePort(send_data, COMMAND_TX_PACKET_SIZE);
+
+  ping_id_model_map_last_read_.clear();
+  uint8_t read_data[PING_PACKET_SIZE] = {0};
+  port_handler_->setPacketTimeout(800.0); // Dynamixel2Arduino issue #106 より、Broadcast Ping は最大759ms程度の待機が必要。
+  while (!port_handler_->isPacketTimeout()) {
+    if (port_handler_->getBytesAvailable() < PING_PACKET_SIZE) {
+      sleep_for(20us);
+      continue;
+    }
+    const int read_length = port_handler_->readPort(read_data, PING_PACKET_SIZE);
+    if (read_length != PING_PACKET_SIZE) {
+      if (verbose_) printf("Ping Error(read length): expected %d, read %d\n", PING_PACKET_SIZE, read_length);
+      continue;
+    }
+    const uint8_t id = read_data[4];
+    if (id == BROADCAST_ID || id > 252) {
+      if (verbose_) printf("Ping Error(id): expected != %d return %d\n", BROADCAST_ID, id);
+      continue;
+    }
+    const uint16_t model_number = uint16_t(read_data[9]) | (uint16_t(read_data[10]) << 8);
+    ping_id_model_map_last_read_[id] = model_number;
+  }
+  if (verbose_ && ping_id_model_map_last_read_.empty()) {
+    printf("Ping Error(time out): ID %d, available bytes %d\n", BROADCAST_ID, port_handler_->getBytesAvailable());
+  }
+  return !ping_id_model_map_last_read_.empty();
+}
+
 bool DynamixelCommunicator::Ping(uint8_t servo_id) {
+  if (servo_id == BROADCAST_ID) return Ping_broadcast();
+
+
   uint8_t send_data[COMMAND_TX_PACKET_SIZE] = {0};
   uint16_t length = INSTRUCTION_SIZE + CRC_SIZE;
   send_data[0] = HEADER[0];
@@ -340,6 +388,7 @@ bool DynamixelCommunicator::Ping(uint8_t servo_id) {
   clear_port_with_drain(port_handler_);
   port_handler_->writePort(send_data, COMMAND_TX_PACKET_SIZE);
 
+  ping_id_model_map_last_read_.clear();
   port_handler_->setPacketTimeout(PING_PACKET_SIZE);
   while(port_handler_->getBytesAvailable() < PING_PACKET_SIZE) {
     if (port_handler_->isPacketTimeout()) {
@@ -356,6 +405,8 @@ bool DynamixelCommunicator::Ping(uint8_t servo_id) {
         return false;
     }
   if( read_data[4] == servo_id) {
+    const uint16_t model_number = uint16_t(read_data[9]) | (uint16_t(read_data[10]) << 8);
+    ping_id_model_map_last_read_[servo_id] = model_number;
     return true;
   } else {
     if (verbose_) printf("Ping Error(header or id): expected ID %d, return ID %d\n", servo_id, read_data[4]);
