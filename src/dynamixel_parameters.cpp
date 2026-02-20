@@ -2,15 +2,9 @@
 
 #include <limits>
 
-DynamixelAddress::DynamixelAddress(
-  uint16_t address,
-  DynamixelDataType data_type,
-  DynamixelPhysicalUnit physical_unit)
-: is_dummy_(false),
-  address_(address),
-  data_type_(data_type),
-  physical_unit_(physical_unit)
-{
+DynamixelAddress::DynamixelAddress( 
+  uint16_t address, DynamixelDataType data_type, DynamixelPhysicalUnit physical_unit)
+    : is_dummy_(false), address_(address), data_type_(data_type), physical_unit_(physical_unit) {
   switch (data_type_) {
     case TYPE_INT8:
     case TYPE_UINT8:  size_ = 1; break;
@@ -31,18 +25,18 @@ int64_t DynamixelAddress::val2pulse(double val, uint16_t model_num) const {
   assert(dynamixel_series(model_num) != SERIES_UNKNOWN);  // 未対応のシリーズの場合はエラー
   double pulse;
   switch (physical_unit_) {
-    case UNIT_POSITION:          pulse = val /*rad*/ / (2 * M_PI) * pos_resolution(model_num); break;
-    case UNIT_POSITION_OFFSET:   pulse = (M_PI + val) /*rad*/ / (2 * M_PI) * pos_resolution(model_num); break;
-    case UNIT_VELOCITY:          pulse = val /*rad_s*/ / vel_factor(model_num); break;
-    case UNIT_ACCELERATION:      pulse = val /*rad_ss*/ / acc_factor(model_num); break;
-    case UNIT_CURRENT:           pulse = val /*mA*/ / cur_factor(model_num); break;
-    case UNIT_VOLTAGE:           pulse = val /*V*/ / 0.1 /*V*/; break;
-    case UNIT_TEMPERATURE:       pulse = val /*degC*/ / 1.0 /*degC*/; break;
-    case UNIT_PWM:               pulse = val /*%*/ / 100.0 * pwm_resolution(model_num) /*degC*/; break;
-    case UNIT_RETURN_DELAY_TIME: pulse = val /*us*/ / 2.0 /*us*/; break;
-    case UNIT_BUS_WATCHDOG:      pulse = val /*ms*/ / 20.0 /*ms*/; break;
-    case UNIT_REALTIME_TICK:     pulse = val /*ms*/ / 1.0 /*ms*/; break;
-    default:                     pulse = val; break;
+    case UNIT_POSITION:          pulse =         val /*rad*/   / (2 * M_PI) * pos_resolution(model_num); break;
+    case UNIT_POSITION_OFFSET:   pulse = (M_PI + val)/*rad*/   / (2 * M_PI) * pos_resolution(model_num); break;
+    case UNIT_VELOCITY:          pulse =         val /*rad_s*/ / vel_factor(model_num); break;
+    case UNIT_ACCELERATION:      pulse =         val /*rad_ss*// acc_factor(model_num); break;
+    case UNIT_CURRENT:           pulse =         val /*mA*/    / cur_factor(model_num); break;
+    case UNIT_VOLTAGE:           pulse =         val /*V*/     / 0.1 /*V*/; break;
+    case UNIT_TEMPERATURE:       pulse =         val /*degC*/  / 1.0 /*degC*/; break;
+    case UNIT_PWM:               pulse =         val /*%*/     / 100.0 * pwm_resolution(model_num) /*degC*/; break;
+    case UNIT_RETURN_DELAY_TIME: pulse =         val /*us*/    / 2.0 /*us*/; break;
+    case UNIT_BUS_WATCHDOG:      pulse =         val /*ms*/    / 20.0 /*ms*/; break;
+    case UNIT_REALTIME_TICK:     pulse =         val /*ms*/    / 1.0 /*ms*/; break;
+    default:                     pulse =         val; break;
   }
   return pulse > 0 ? ceil(pulse) : floor(pulse);
 }
@@ -100,11 +94,10 @@ uint32_t DynamixelAddress::pos_resolution(uint16_t model_num) const {
 }
 
 uint16_t DynamixelAddress::pwm_resolution(uint16_t model_num) const {
-  if (dynamixel_series(model_num) == SERIES_P) return 2009;
-  if (dynamixel_series(model_num) == SERIES_X) return 885;
-  /*dynamixel_series(model_num) == SERIES_PRO*/
-  assert(false);  // 旧ProシリーズではPWM制御できないはず．
-  return 885;
+  if      ( dynamixel_series(model_num) == SERIES_P ) return 2009;
+  else if ( dynamixel_series(model_num) == SERIES_X ) return 885;
+  else   /*dynamixel_series(model_num) == SERIES_PRO*/ assert(false); // 旧ProシリーズではPWM制御できないはず．
+  return 1000; // ここには来ないはずで，コンパイルエラー回避のためのダミーの値
 }
 
 double DynamixelAddress::cur_factor(uint16_t model_num) const {
