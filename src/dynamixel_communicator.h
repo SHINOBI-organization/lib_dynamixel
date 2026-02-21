@@ -38,8 +38,10 @@ class DynamixelCommunicator {
         bool timeout_last_read(){ return timeout_last_read_; }
         bool comm_error_last_read(){ return comm_error_last_read_; }
         bool hardware_error_last_read(){ return hardware_error_last_read_; }
-        vector<uint8_t> hardware_error_id_last_read(){ return hardware_error_id_last_read_; }
-        map<uint8_t, uint16_t> ping_id_model_map_last_read(){ return ping_id_model_map_last_read_; }
+        vector<uint8_t>& hardware_error_id_last_read() { return hardware_error_id_last_read_; }
+        map<uint8_t, uint16_t>& ping_id_model_map_last_read() { return ping_id_model_map_last_read_; }
+        double dead_time_retry_ping(){ return num_try_ * latency_timer_; }
+        double wait_time_ping_broadcast(){ return msec_watch_ping_broadcast_; }
 
         void set_retry_config(int num_try, int msec_interval){
             num_try_ = std::max(num_try, 1);
@@ -51,7 +53,7 @@ class DynamixelCommunicator {
         void Reboot(uint8_t servo_id);
         void FactoryReset(uint8_t servo_id, FactoryResetLevel level);
         bool Ping(uint8_t servo_id);
-        bool Ping_broadcast();
+        vector<uint8_t> Ping_broadcast();
 
         // パラメータ1つ
         bool Write    (DynamixelAddress, uint8_t               , int64_t               );
@@ -105,6 +107,7 @@ class DynamixelCommunicator {
         uint8_t num_try_       = 5;
         uint8_t msec_interval_ = 5;
         int32_t deficient_byte_ = 0;
+        double msec_watch_ping_broadcast_ = 800.0;
 };
 
 #endif /* DYNAMIXEL_COMMUNICATOR_H_ */

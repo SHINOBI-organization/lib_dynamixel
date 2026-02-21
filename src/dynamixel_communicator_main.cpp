@@ -324,7 +324,7 @@ void DynamixelCommunicator::FactoryReset(uint8_t servo_id, FactoryResetLevel lev
  * @param uint8_t servo_id 対象のID
  * @return bool 応答があったかどうか
  */
-bool DynamixelCommunicator::Ping_broadcast() {
+vector<uint8_t> DynamixelCommunicator::Ping_broadcast() {
   uint8_t send_data[COMMAND_TX_PACKET_SIZE] = {0};
   uint16_t length = INSTRUCTION_SIZE + CRC_SIZE;
   send_data[0] = HEADER[0];
@@ -342,8 +342,9 @@ bool DynamixelCommunicator::Ping_broadcast() {
   port_handler_->writePort(send_data, COMMAND_TX_PACKET_SIZE);
 
   ping_id_model_map_last_read_.clear();
+  vector<uint8_t> found_id_list;
   uint8_t read_data[PING_PACKET_SIZE] = {0};
-  port_handler_->setPacketTimeout(800.0); // Dynamixel2Arduino issue #106 より、Broadcast Ping は最大759ms程度の待機が必要。
+  port_handler_->setPacketTimeout(msec_watch_ping_broadcast_); // Dynamixel2Arduino issue #106 より、Broadcast Ping は最大759ms程度の待機が必要。
   while (!port_handler_->isPacketTimeout()) {
     if (port_handler_->getBytesAvailable() < PING_PACKET_SIZE) {
       sleep_for(20us);
@@ -361,17 +362,15 @@ bool DynamixelCommunicator::Ping_broadcast() {
     }
     const uint16_t model_number = uint16_t(read_data[9]) | (uint16_t(read_data[10]) << 8);
     ping_id_model_map_last_read_[id] = model_number;
+    found_id_list.push_back(id);
   }
   if (verbose_ && ping_id_model_map_last_read_.empty()) {
     printf("Ping Error(time out): ID %d, available bytes %d\n", BROADCAST_ID, port_handler_->getBytesAvailable());
   }
-  return !ping_id_model_map_last_read_.empty();
+  return found_id_list;
 }
 
 bool DynamixelCommunicator::Ping(uint8_t servo_id) {
-  if (servo_id == BROADCAST_ID) return Ping_broadcast();
-
-
   uint8_t send_data[COMMAND_TX_PACKET_SIZE] = {0};
   uint16_t length = INSTRUCTION_SIZE + CRC_SIZE;
   send_data[0] = HEADER[0];
