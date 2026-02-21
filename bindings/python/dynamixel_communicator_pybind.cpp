@@ -134,12 +134,16 @@ PYBIND11_MODULE(_mylib_dynamixel, m) {
       .def("comm_error_last_read", &DynamixelCommunicator::comm_error_last_read)
       .def("hardware_error_last_read", &DynamixelCommunicator::hardware_error_last_read)
       .def("hardware_error_id_last_read", &DynamixelCommunicator::hardware_error_id_last_read)
+      .def("ping_id_model_map_last_read", &DynamixelCommunicator::ping_id_model_map_last_read)
+      .def("dead_time_retry_ping", &DynamixelCommunicator::dead_time_retry_ping)
+      .def("wait_time_ping_broadcast", &DynamixelCommunicator::wait_time_ping_broadcast)
       .def("set_retry_config", &DynamixelCommunicator::set_retry_config, py::arg("num_try"), py::arg("msec_interval"))
       .def("OpenPort", &DynamixelCommunicator::OpenPort)
       .def("ClosePort", &DynamixelCommunicator::ClosePort)
       .def("Reboot", &DynamixelCommunicator::Reboot, py::arg("servo_id"))
       .def("FactoryReset", &DynamixelCommunicator::FactoryReset, py::arg("servo_id"), py::arg("level"))
       .def("Ping", &DynamixelCommunicator::Ping, py::arg("servo_id"))
+      .def("Ping_broadcast", &DynamixelCommunicator::Ping_broadcast)
 
       // single parameter operations
       .def("Write", py::overload_cast<DynamixelAddress, uint8_t, int64_t>(&DynamixelCommunicator::Write),
@@ -201,6 +205,7 @@ PYBIND11_MODULE(_mylib_dynamixel, m) {
       .def("open_port", &DynamixelCommunicator::OpenPort)
       .def("close_port", &DynamixelCommunicator::ClosePort)
       .def("try_ping", &DynamixelCommunicator::tryPing, py::arg("servo_id"))
+      .def("ping_broadcast", &DynamixelCommunicator::Ping_broadcast)
       .def("try_read_uint16",
            [](DynamixelCommunicator& self, int address, int servo_id) {
              DynamixelAddress dp(static_cast<uint16_t>(address), TYPE_UINT16);
