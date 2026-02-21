@@ -660,6 +660,89 @@ bool DynamixelCommunicator::SyncWrite(DynamixelAddress dp, const map<uint8_t, in
 }
 
 /** @fn
+ * @brief 複数のDynamixelのそれぞれ異なるアドレスから情報を読み込む
+ * @param map<uint8_t, DynamixelAddress> id_dp_map 読み込むサーボIDとアドレスのマップ
+ * @return map<uint8_t, int64_t> 読み込んだサーボIDとデータのマップ
+ */
+map<uint8_t, int64_t> DynamixelCommunicator::BulkRead(const map<uint8_t, DynamixelAddress>& id_dp_map) {
+    map<uint8_t, vector<DynamixelAddress>> id_dp_list_map;
+    for (const auto& id_dp : id_dp_map) id_dp_list_map[id_dp.first] = {id_dp.second};
+    const auto id_data_vec_map = BulkRead(id_dp_list_map);
+
+    map<uint8_t, int64_t> id_data_map;
+    for (const auto& id_data_vec : id_data_vec_map) {
+        if (id_data_vec.second.empty()) continue;
+        id_data_map[id_data_vec.first] = id_data_vec.second[0];
+    }
+    return id_data_map;
+}
+
+/** @fn
+ * @brief 複数のDynamixelのそれぞれ異なるアドレスから情報を読み込む(高速版)
+ * @param map<uint8_t, DynamixelAddress> id_dp_map 読み込むサーボIDとアドレスのマップ
+ * @return map<uint8_t, int64_t> 読み込んだサーボIDとデータのマップ
+ */
+map<uint8_t, int64_t> DynamixelCommunicator::BulkRead_fast(const map<uint8_t, DynamixelAddress>& id_dp_map) {
+    map<uint8_t, vector<DynamixelAddress>> id_dp_list_map;
+    for (const auto& id_dp : id_dp_map) id_dp_list_map[id_dp.first] = {id_dp.second};
+    const auto id_data_vec_map = BulkRead_fast(id_dp_list_map);
+
+    map<uint8_t, int64_t> id_data_map;
+    for (const auto& id_data_vec : id_data_vec_map) {
+        if (id_data_vec.second.empty()) continue;
+        id_data_map[id_data_vec.first] = id_data_vec.second[0];
+    }
+    return id_data_map;
+}
+
+/** @fn
+ * @brief 複数のDynamixelのそれぞれ異なるアドレスに情報を書き込む
+ * @param map<uint8_t, DynamixelAddress> id_dp_map 書き込むサーボIDとアドレスのマップ
+ * @param map<uint8_t, int64_t> id_data_int_map 書き込むサーボIDとデータのマップ
+ * @return bool 通信成功判定
+ */
+bool DynamixelCommunicator::BulkWrite(const map<uint8_t, DynamixelAddress>& id_dp_map, const map<uint8_t, int64_t>& id_data_int_map) {
+    map<uint8_t, vector<DynamixelAddress>> id_dp_list_map;
+    map<uint8_t, vector<int64_t>> id_data_vec_map;
+    for (const auto& id_dp : id_dp_map) {
+        const uint8_t id = id_dp.first;
+        if (!id_data_int_map.count(id)) {
+            if (verbose_) printf("Bulk Write Error(id data map): missing ID %d\n", id);
+            return false;
+        }
+        id_dp_list_map[id] = {id_dp.second};
+        id_data_vec_map[id] = {id_data_int_map.at(id)};
+    }
+    return BulkWrite(id_dp_list_map, id_data_vec_map);
+}
+
+/** @fn
+ * @brief 複数のDynamixelのそれぞれ異なるアドレスに情報を書き込む(簡易版)
+ * @param vector<uint8_t> servo_id_list 書き込むサーボのIDリスト
+ * @param vector<DynamixelAddress> dp_list 書き込むアドレスリスト
+ * @param vector<int64_t> data_int_list 書き込むデータリスト
+ * @return bool 通信成功判定
+ */
+bool DynamixelCommunicator::BulkWrite(const vector<uint8_t>& servo_id_list, const vector<DynamixelAddress>& dp_list, const vector<int64_t>& data_int_list) {
+    if (servo_id_list.size() != dp_list.size() || servo_id_list.size() != data_int_list.size()) {
+        if (verbose_) printf("Bulk Write Error(mismatch id/addr/data num): id=%d, addr=%d, data=%d\n", (int)servo_id_list.size(), (int)dp_list.size(), (int)data_int_list.size());
+        return false;
+    }
+    map<uint8_t, DynamixelAddress> id_dp_map;
+    map<uint8_t, int64_t> id_data_int_map;
+    for (size_t i=0; i<servo_id_list.size(); i++) {
+        const uint8_t id = servo_id_list[i];
+        if (id_dp_map.count(id)) {
+            if (verbose_) printf("Bulk Write Error(duplicate id): ID %d\n", id);
+            return false;
+        }
+        id_dp_map.emplace(id, dp_list[i]);
+        id_data_int_map[id] = data_int_list[i];
+    }
+    return BulkWrite(id_dp_map, id_data_int_map);
+}
+
+/** @fn
  * @brief 複数のDynamixelの同一のアドレスから情報を読み込む
  * @param DynamixelAddress dp 対象のパラメータのインスタンス
  * @param vector<uint8_t> servo_id_list 読み込むサーボのIDのリスト
@@ -1113,6 +1196,467 @@ vector<int64_t> DynamixelCommunicator::Read(const vector<DynamixelAddress>& dp_l
         data_int_list[i_dp] = DecodeDataRead(dp.data_type());
     }
     return data_int_list;
+}
+
+/** @fn
+ * @brief 複数のDynamixelのそれぞれ異なるアドレス群から情報を読み込む
+ * @param map<uint8_t, vector<DynamixelAddress>> id_dp_list_map 読み込むサーボIDとアドレス群のマップ
+ * @return map<uint8_t, vector<int64_t>> 読み込んだサーボIDとデータ群のマップ
+ */
+map<uint8_t, vector<int64_t>> DynamixelCommunicator::BulkRead(const map<uint8_t, vector<DynamixelAddress>>& id_dp_list_map) {
+    constexpr size_t max_read_servo = 100;
+    constexpr size_t max_param_num = 10;
+    constexpr size_t bulk_param_size_per_servo = ID_SIZE + ADDR_SIZE + DATA_LEN_SIZE;  // 5
+    if (id_dp_list_map.size() > max_read_servo) {
+        if(verbose_) printf("Bulk Read Error(too many servo): servo num=%d > %d\n", (int)id_dp_list_map.size(), (int)max_read_servo);
+        return map<uint8_t, vector<int64_t>>();
+    }
+    if (id_dp_list_map.empty()) return map<uint8_t, vector<int64_t>>();
+
+    vector<uint8_t> servo_id_list; servo_id_list.reserve(id_dp_list_map.size());
+    vector<vector<DynamixelAddress>> dp_list_per_servo; dp_list_per_servo.reserve(id_dp_list_map.size());
+    vector<DynamixelAddress> dp_min_per_servo; dp_min_per_servo.reserve(id_dp_list_map.size());
+    vector<uint16_t> size_total_dp_per_servo; size_total_dp_per_servo.reserve(id_dp_list_map.size());
+    int expected_len = 0;
+    for (const auto& id_dp_list : id_dp_list_map) {
+        const uint8_t id = id_dp_list.first;
+        const auto& dp_list = id_dp_list.second;
+        if (id == BROADCAST_ID || id > 252) {
+            if(verbose_) printf("Bulk Read Error(id): expected != %d return %d\n", BROADCAST_ID, id);
+            return map<uint8_t, vector<int64_t>>();
+        }
+        if (dp_list.empty()) {
+            if(verbose_) printf("Bulk Read Error(empty param): ID %d\n", id);
+            return map<uint8_t, vector<int64_t>>();
+        }
+        if (dp_list.size() > max_param_num) {
+            if(verbose_) printf("Bulk Read Error(too many param): ID %d, param num=%d > %d\n", id, (int)dp_list.size(), (int)max_param_num);
+            return map<uint8_t, vector<int64_t>>();
+        }
+        auto [dp_min_it, dp_max_it] = minmax_element(dp_list.begin(), dp_list.end(),
+            [](const DynamixelAddress& a, const DynamixelAddress& b){ return a.address() < b.address(); });
+        DynamixelAddress dp_min = *dp_min_it;
+        DynamixelAddress dp_max = *dp_max_it;
+        const uint16_t size_total_dp = static_cast<uint16_t>(dp_max.address() + dp_max.size() - dp_min.address());
+
+        servo_id_list.push_back(id);
+        dp_list_per_servo.push_back(dp_list);
+        dp_min_per_servo.push_back(dp_min);
+        size_total_dp_per_servo.push_back(size_total_dp);
+        expected_len += STATUS_PACKET_SIZE + size_total_dp;
+    }
+
+    const size_t num_servo = servo_id_list.size();
+    const uint16_t param_size = static_cast<uint16_t>(num_servo * bulk_param_size_per_servo);
+    vector<uint8_t> send_data(COMMAND_TX_PACKET_SIZE + param_size, 0);
+    uint16_t length = static_cast<uint16_t>(INSTRUCTION_SIZE + param_size + CRC_SIZE);
+    send_data[0] = HEADER[0];
+    send_data[1] = HEADER[1];
+    send_data[2] = HEADER[2];
+    send_data[3] = HEADER[3];
+    send_data[4] = BROADCAST_ID;
+    send_data[5] = length & 0xFF;
+    send_data[6] = (length>>8) & 0xFF;
+    send_data[7] = INSTRUCTION_BULK_READ;
+    for (size_t i_servo=0; i_servo<num_servo; i_servo++) {
+        const size_t index = COMMAND_TX_PACKET_SIZE - CRC_SIZE + i_servo * bulk_param_size_per_servo;
+        send_data[index + 0] = servo_id_list[i_servo];
+        send_data[index + 1] = dp_min_per_servo[i_servo].address() & 0xFF;
+        send_data[index + 2] = (dp_min_per_servo[i_servo].address() >> 8) & 0xFF;
+        send_data[index + 3] = size_total_dp_per_servo[i_servo] & 0xFF;
+        send_data[index + 4] = (size_total_dp_per_servo[i_servo] >> 8) & 0xFF;
+    }
+    const size_t crc_index = COMMAND_TX_PACKET_SIZE - CRC_SIZE + param_size;
+    uint16_t sum = CalcChecksum(send_data.data(), crc_index);
+    send_data[crc_index + 0] = sum & 0xFF;
+    send_data[crc_index + 1] = (sum>>8) & 0xFF;
+
+    port_handler_->setPacketTimeout( uint16_t(deficient_byte_) );
+    while( timeout_last_read_ && port_handler_->getBytesAvailable() < deficient_byte_) {
+        if (port_handler_->isPacketTimeout()) {
+            if(verbose_) printf("Bulk Read Warn: clear buffer time out\n");
+            break;
+        }
+        sleep_for(20us);
+    }
+    clear_port_with_drain(port_handler_);
+    port_handler_->writePort(send_data.data(), static_cast<int>(send_data.size()));
+
+    map<uint8_t, vector<int64_t>> id_data_vec_map;
+    hardware_error_last_read_ = false;
+    hardware_error_id_last_read_.clear();
+    comm_error_last_read_ = false;
+
+    timeout_last_read_ = false;
+    port_handler_->setPacketTimeout(uint16_t(expected_len));
+    while (port_handler_->getBytesAvailable() < expected_len) {
+        if (port_handler_->isPacketTimeout()) {
+            if(verbose_) printf("Bulk Read Error(time out): available bytes %d / %d\n", port_handler_->getBytesAvailable(), expected_len);
+            deficient_byte_ = expected_len - port_handler_->getBytesAvailable();
+            timeout_last_read_ = true;
+            break;
+        }
+        sleep_for(20us);
+    }
+
+    const int bytes_to_read = std::min(port_handler_->getBytesAvailable(), expected_len);
+    if (bytes_to_read <= 0) return id_data_vec_map;
+
+    vector<uint8_t> read_data(bytes_to_read, 0);
+    int read_length = port_handler_->readPort(read_data.data(), bytes_to_read);
+    if (read_length == -1) {
+        if(verbose_) printf("Bulk Read Error(read port)\n");
+        comm_error_last_read_ = true;
+        return id_data_vec_map;
+    }
+    if (read_length < expected_len) {
+        timeout_last_read_ = true;
+        deficient_byte_ = expected_len - read_length;
+    }
+
+    size_t read_offset = 0;
+    for (size_t i_servo = 0; i_servo < num_servo; i_servo++) {
+        const uint16_t size_total_dp = size_total_dp_per_servo[i_servo];
+        const size_t packet_len = STATUS_PACKET_SIZE + size_total_dp;
+        if (read_offset + packet_len > static_cast<size_t>(read_length)) break;
+        uint8_t* packet = &read_data[read_offset];
+        read_offset += packet_len;
+
+        if (packet[0] != HEADER[0] or
+            packet[1] != HEADER[1] or
+            packet[2] != HEADER[2] or
+            packet[3] != HEADER[3]) {
+            if(verbose_) printf("Bulk Read Error(header): seq=%d\n", (int)i_servo);
+            comm_error_last_read_ = true;
+            continue;
+        }
+        const uint8_t id = packet[4];
+        if (id != servo_id_list[i_servo]) {
+            if(verbose_) printf("Bulk Read Error(packet id): expected %d return %d\n", servo_id_list[i_servo], id);
+            comm_error_last_read_ = true;
+            continue;
+        }
+        const uint8_t error = packet[8];
+        if (error & 0x7F) {
+            if(verbose_) printf("Bulk Read Error(packet error): ID %d\n", id);
+            comm_error_last_read_ = true;
+            continue;
+        }
+        uint16_t sum_est = CalcChecksum(packet, STATUS_PACKET_SIZE - CRC_SIZE + size_total_dp);
+        uint16_t sum_read = uint16_t(packet[STATUS_PACKET_SIZE - CRC_SIZE + size_total_dp]) |
+            uint16_t(packet[STATUS_PACKET_SIZE - CRC_SIZE + size_total_dp + 1]) << 8;
+        if (sum_est != sum_read) {
+            if(verbose_) printf("Bulk Read Error(crc): ID %d, est=%d, read=%d\n", id, sum_est, sum_read);
+            comm_error_last_read_ = true;
+            continue;
+        }
+
+        if (error & 0x80) hardware_error_last_read_ = true;
+        if (error & 0x80) hardware_error_id_last_read_.push_back(id);
+        id_data_vec_map[id].resize(dp_list_per_servo[i_servo].size(), 0);
+        for (size_t i_dp=0; i_dp<dp_list_per_servo[i_servo].size(); i_dp++) {
+            const DynamixelAddress& dp = dp_list_per_servo[i_servo][i_dp];
+            const uint16_t index = dp.address() - dp_min_per_servo[i_servo].address();
+            for (size_t i_data=0; i_data<dp.size(); i_data++) data_read_[i_data] = packet[9 + index + i_data];
+            id_data_vec_map[id][i_dp] = DecodeDataRead(dp.data_type());
+        }
+    }
+    return id_data_vec_map;
+}
+
+/** @fn
+ * @brief 複数のDynamixelのそれぞれ異なるアドレス群から情報を読み込む(高速版)
+ * @param map<uint8_t, vector<DynamixelAddress>> id_dp_list_map 読み込むサーボIDとアドレス群のマップ
+ * @return map<uint8_t, vector<int64_t>> 読み込んだサーボIDとデータ群のマップ
+ */
+map<uint8_t, vector<int64_t>> DynamixelCommunicator::BulkRead_fast(const map<uint8_t, vector<DynamixelAddress>>& id_dp_list_map) {
+    constexpr size_t max_read_servo = 100;
+    constexpr size_t max_param_num = 10;
+    constexpr size_t bulk_param_size_per_servo = ID_SIZE + ADDR_SIZE + DATA_LEN_SIZE;  // 5
+    if (id_dp_list_map.size() > max_read_servo) {
+        if(verbose_) printf("Fast Bulk Read Error(too many servo): servo num=%d > %d\n", (int)id_dp_list_map.size(), (int)max_read_servo);
+        return map<uint8_t, vector<int64_t>>();
+    }
+    if (id_dp_list_map.empty()) return map<uint8_t, vector<int64_t>>();
+
+    vector<uint8_t> servo_id_list; servo_id_list.reserve(id_dp_list_map.size());
+    vector<vector<DynamixelAddress>> dp_list_per_servo; dp_list_per_servo.reserve(id_dp_list_map.size());
+    vector<DynamixelAddress> dp_min_per_servo; dp_min_per_servo.reserve(id_dp_list_map.size());
+    vector<uint16_t> size_total_dp_per_servo; size_total_dp_per_servo.reserve(id_dp_list_map.size());
+    int expected_len = FAST_SYNC_FRAME_PREFIX_SIZE;
+    for (const auto& id_dp_list : id_dp_list_map) {
+        const uint8_t id = id_dp_list.first;
+        const auto& dp_list = id_dp_list.second;
+        if (id == BROADCAST_ID || id > 252) {
+            if(verbose_) printf("Fast Bulk Read Error(id): expected != %d return %d\n", BROADCAST_ID, id);
+            return map<uint8_t, vector<int64_t>>();
+        }
+        if (dp_list.empty()) {
+            if(verbose_) printf("Fast Bulk Read Error(empty param): ID %d\n", id);
+            return map<uint8_t, vector<int64_t>>();
+        }
+        if (dp_list.size() > max_param_num) {
+            if(verbose_) printf("Fast Bulk Read Error(too many param): ID %d, param num=%d > %d\n", id, (int)dp_list.size(), (int)max_param_num);
+            return map<uint8_t, vector<int64_t>>();
+        }
+        auto [dp_min_it, dp_max_it] = minmax_element(dp_list.begin(), dp_list.end(),
+            [](const DynamixelAddress& a, const DynamixelAddress& b){ return a.address() < b.address(); });
+        DynamixelAddress dp_min = *dp_min_it;
+        DynamixelAddress dp_max = *dp_max_it;
+        const uint16_t size_total_dp = static_cast<uint16_t>(dp_max.address() + dp_max.size() - dp_min.address());
+
+        servo_id_list.push_back(id);
+        dp_list_per_servo.push_back(dp_list);
+        dp_min_per_servo.push_back(dp_min);
+        size_total_dp_per_servo.push_back(size_total_dp);
+        expected_len += FAST_SYNC_PER_SERVO_OVERHEAD + size_total_dp;
+    }
+
+    const size_t num_servo = servo_id_list.size();
+    const uint16_t param_size = static_cast<uint16_t>(num_servo * bulk_param_size_per_servo);
+    vector<uint8_t> send_data(COMMAND_TX_PACKET_SIZE + param_size, 0);
+    uint16_t length = static_cast<uint16_t>(INSTRUCTION_SIZE + param_size + CRC_SIZE);
+    send_data[0] = HEADER[0];
+    send_data[1] = HEADER[1];
+    send_data[2] = HEADER[2];
+    send_data[3] = HEADER[3];
+    send_data[4] = BROADCAST_ID;
+    send_data[5] = length & 0xFF;
+    send_data[6] = (length>>8) & 0xFF;
+    send_data[7] = INSTRUCTION_FAST_BULK_READ;
+    for (size_t i_servo=0; i_servo<num_servo; i_servo++) {
+        const size_t index = COMMAND_TX_PACKET_SIZE - CRC_SIZE + i_servo * bulk_param_size_per_servo;
+        send_data[index + 0] = servo_id_list[i_servo];
+        send_data[index + 1] = dp_min_per_servo[i_servo].address() & 0xFF;
+        send_data[index + 2] = (dp_min_per_servo[i_servo].address() >> 8) & 0xFF;
+        send_data[index + 3] = size_total_dp_per_servo[i_servo] & 0xFF;
+        send_data[index + 4] = (size_total_dp_per_servo[i_servo] >> 8) & 0xFF;
+    }
+    const size_t crc_index = COMMAND_TX_PACKET_SIZE - CRC_SIZE + param_size;
+    uint16_t sum = CalcChecksum(send_data.data(), crc_index);
+    send_data[crc_index + 0] = sum & 0xFF;
+    send_data[crc_index + 1] = (sum>>8) & 0xFF;
+
+    port_handler_->setPacketTimeout( uint16_t(deficient_byte_) );
+    while( timeout_last_read_ && port_handler_->getBytesAvailable() < deficient_byte_) {
+        if (port_handler_->isPacketTimeout()) {
+            if(verbose_) printf("Fast Bulk Read Warn: clear buffer time out\n");
+            break;
+        }
+        sleep_for(20us);
+    }
+    clear_port_with_drain(port_handler_);
+    port_handler_->writePort(send_data.data(), static_cast<int>(send_data.size()));
+
+    hardware_error_last_read_ = false;
+    hardware_error_id_last_read_.clear();
+    comm_error_last_read_ = false;
+
+    timeout_last_read_ = false;
+    port_handler_->setPacketTimeout(uint16_t(expected_len));
+    while (port_handler_->getBytesAvailable() < expected_len) {
+        if (port_handler_->isPacketTimeout()) {
+            if(verbose_) printf("Fast Bulk Read Error(time out): available bytes %d / %d\n", port_handler_->getBytesAvailable(), expected_len);
+            deficient_byte_ = expected_len - port_handler_->getBytesAvailable();
+            timeout_last_read_ = true;
+            return map<uint8_t, vector<int64_t>>();
+        }
+        sleep_for(20us);
+    }
+
+    vector<uint8_t> read_data(expected_len, 0);
+    int read_length = port_handler_->readPort(read_data.data(), expected_len);
+    map<uint8_t, vector<int64_t>> id_data_vec_map;
+    if (read_length == -1) {
+        if(verbose_) printf("Fast Bulk Read Error(read port)\n");
+        comm_error_last_read_ = true;
+        return id_data_vec_map;
+    }
+    if (read_length < expected_len) {
+        if(verbose_) printf("Fast Bulk Read Error(short read): expected %d return %d\n", expected_len, read_length);
+        timeout_last_read_ = true;
+        deficient_byte_ = expected_len - read_length;
+        comm_error_last_read_ = true;
+        return id_data_vec_map;
+    }
+    if (read_data[0] != HEADER[0] ||
+        read_data[1] != HEADER[1] ||
+        read_data[2] != HEADER[2] ||
+        read_data[3] != HEADER[3]) {
+        if(verbose_) printf("Fast Bulk Read Error(header)\n");
+        comm_error_last_read_ = true;
+        return id_data_vec_map;
+    }
+    if (read_data[4] != BROADCAST_ID) {
+        if(verbose_) printf("Fast Bulk Read Error(broad cast id)\n");
+        comm_error_last_read_ = true;
+        return id_data_vec_map;
+    }
+
+    size_t read_offset = FAST_SYNC_FRAME_PREFIX_SIZE;
+    for (size_t i_servo=0; i_servo<num_servo; i_servo++) {
+        const uint16_t size_total_dp = size_total_dp_per_servo[i_servo];
+        const size_t packet_len = FAST_SYNC_PER_SERVO_OVERHEAD + size_total_dp;
+        if (read_offset + packet_len > static_cast<size_t>(read_length)) {
+            if (verbose_) printf("Fast Bulk Read Error(packet length): seq=%d\n", (int)i_servo);
+            comm_error_last_read_ = true;
+            return map<uint8_t, vector<int64_t>>();
+        }
+        uint8_t error = read_data[read_offset + 0];
+        uint8_t id = read_data[read_offset + 1];
+        if (id != servo_id_list[i_servo]) {
+            if(verbose_) printf("Fast Bulk Read Error(packet id): expected %d return %d\n", servo_id_list[i_servo], id);
+            comm_error_last_read_ = true;
+            return map<uint8_t, vector<int64_t>>();
+        }
+        if (error & 0x7F) {
+            if(verbose_) printf("Fast Bulk Read Error(packet error): ID %d\n", id);
+            comm_error_last_read_ = true;
+            read_offset += packet_len;
+            continue;
+        }
+
+        if (error & 0x80) hardware_error_last_read_ = true;
+        if (error & 0x80) hardware_error_id_last_read_.push_back(id);
+        id_data_vec_map[id].resize(dp_list_per_servo[i_servo].size(), 0);
+        for (size_t i_dp=0; i_dp<dp_list_per_servo[i_servo].size(); i_dp++) {
+            const DynamixelAddress& dp = dp_list_per_servo[i_servo][i_dp];
+            const uint16_t index = dp.address() - dp_min_per_servo[i_servo].address();
+            for (size_t i_data=0; i_data<dp.size(); i_data++) {
+                data_read_[i_data] = read_data[read_offset + ERROR_SIZE + ID_SIZE + index + i_data];
+            }
+            id_data_vec_map[id][i_dp] = DecodeDataRead(dp.data_type());
+        }
+        read_offset += packet_len;
+    }
+    return id_data_vec_map;
+}
+
+/** @fn
+ * @brief 複数のDynamixelのそれぞれ異なるアドレス群に情報を書き込む
+ * @param map<uint8_t, vector<DynamixelAddress>> id_dp_list_map 書き込むサーボIDとアドレス群のマップ
+ * @param map<uint8_t, vector<int64_t>> id_data_vec_map 書き込むサーボIDとデータ群のマップ
+ * @return bool 通信成功判定
+ */
+bool DynamixelCommunicator::BulkWrite(const map<uint8_t, vector<DynamixelAddress>>& id_dp_list_map, const map<uint8_t, vector<int64_t>>& id_data_vec_map) {
+    constexpr size_t max_write_servo = 100;
+    constexpr size_t max_param_num = 10;
+    if (id_dp_list_map.size() > max_write_servo) {
+        if(verbose_) printf("Bulk Write Error(too many servo): servo num=%d > %d\n", (int)id_dp_list_map.size(), (int)max_write_servo);
+        return false;
+    }
+    if (id_dp_list_map.empty()) return true;
+
+    vector<uint8_t> servo_id_list; servo_id_list.reserve(id_dp_list_map.size());
+    vector<uint16_t> dp_start_addr_list; dp_start_addr_list.reserve(id_dp_list_map.size());
+    vector<vector<uint8_t>> write_data_list; write_data_list.reserve(id_dp_list_map.size());
+    size_t total_param_size = 0;
+    for (const auto& id_dp_list : id_dp_list_map) {
+        const uint8_t id = id_dp_list.first;
+        if (id == BROADCAST_ID || id > 252) {
+            if(verbose_) printf("Bulk Write Error(id): expected != %d return %d\n", BROADCAST_ID, id);
+            return false;
+        }
+        if (!id_data_vec_map.count(id)) {
+            if(verbose_) printf("Bulk Write Error(id data map): missing ID %d\n", id);
+            return false;
+        }
+        const auto& dp_list = id_dp_list.second;
+        const auto& data_vec = id_data_vec_map.at(id);
+        if (dp_list.empty()) {
+            if(verbose_) printf("Bulk Write Error(empty param): ID %d\n", id);
+            return false;
+        }
+        if (dp_list.size() > max_param_num) {
+            if(verbose_) printf("Bulk Write Error(too many param): ID %d, param num=%d > %d\n", id, (int)dp_list.size(), (int)max_param_num);
+            return false;
+        }
+        if (dp_list.size() != data_vec.size()) {
+            if(verbose_) printf("Bulk Write Error(mismatch param and data num): ID %d, param num=%d, data num=%d\n", id, (int)dp_list.size(), (int)data_vec.size());
+            return false;
+        }
+
+        DynamixelAddress dp_min = *dp_list.begin();
+        DynamixelAddress dp_max = *dp_list.rbegin();
+        for (size_t i_dp=0; i_dp<dp_list.size(); i_dp++) {
+            if (dp_list[i_dp].is_dummy()) {
+                if (verbose_) printf("Bulk Write Error(dummy address is readonly): ID %d\n", id);
+                return false;
+            }
+            if (i_dp+1<dp_list.size() && dp_list[i_dp].address() + dp_list[i_dp].size() != dp_list[i_dp+1].address()) {
+                if(verbose_) printf("Bulk Write Error(address is not continuous): ID %d, addr1=%d (%d), addr2=%d\n", id, dp_list[i_dp].address(), dp_list[i_dp].size(), dp_list[i_dp+1].address());
+                return false;
+            }
+        }
+        const uint16_t size_total_dp = static_cast<uint16_t>(dp_max.address() + dp_max.size() - dp_min.address());
+        vector<uint8_t> write_data(size_total_dp, 0);
+        for (size_t i_dp=0; i_dp<dp_list.size(); i_dp++) {
+            const DynamixelAddress& dp = dp_list[i_dp];
+            const uint16_t index = dp.address() - dp_min.address();
+            EncodeDataWrite(dp.data_type(), data_vec[i_dp]);
+            for (size_t i_data=0; i_data<dp.size(); i_data++) write_data[index + i_data] = data_write_[i_data];
+        }
+
+        servo_id_list.push_back(id);
+        dp_start_addr_list.push_back(dp_min.address());
+        write_data_list.push_back(write_data);
+        total_param_size += ID_SIZE + ADDR_SIZE + DATA_LEN_SIZE + write_data.size();
+    }
+
+    vector<uint8_t> send_data(COMMAND_TX_PACKET_SIZE + total_param_size, 0);
+    uint16_t length = static_cast<uint16_t>(INSTRUCTION_SIZE + total_param_size + CRC_SIZE);
+    send_data[0] = HEADER[0];
+    send_data[1] = HEADER[1];
+    send_data[2] = HEADER[2];
+    send_data[3] = HEADER[3];
+    send_data[4] = BROADCAST_ID;
+    send_data[5] = length & 0xFF;
+    send_data[6] = (length>>8) & 0xFF;
+    send_data[7] = INSTRUCTION_BULK_WRITE;
+    size_t index = COMMAND_TX_PACKET_SIZE - CRC_SIZE;
+    for (size_t i_servo=0; i_servo<servo_id_list.size(); i_servo++) {
+        const auto& write_data = write_data_list[i_servo];
+        send_data[index + 0] = servo_id_list[i_servo];
+        send_data[index + 1] = dp_start_addr_list[i_servo] & 0xFF;
+        send_data[index + 2] = (dp_start_addr_list[i_servo] >> 8) & 0xFF;
+        send_data[index + 3] = write_data.size() & 0xFF;
+        send_data[index + 4] = (write_data.size() >> 8) & 0xFF;
+        for (size_t i_data=0; i_data<write_data.size(); i_data++) send_data[index + 5 + i_data] = write_data[i_data];
+        index += ID_SIZE + ADDR_SIZE + DATA_LEN_SIZE + write_data.size();
+    }
+    uint16_t sum = CalcChecksum(send_data.data(), index);
+    send_data[index + 0] = sum & 0xFF;
+    send_data[index + 1] = (sum>>8) & 0xFF;
+
+    clear_port_with_drain(port_handler_);
+    port_handler_->writePort(send_data.data(), static_cast<int>(send_data.size()));
+    return true;
+}
+
+/** @fn
+ * @brief 複数のDynamixelのそれぞれ異なるアドレス群に情報を書き込む(簡易版)
+ * @param vector<uint8_t> servo_id_list 書き込むサーボIDリスト
+ * @param vector<vector<DynamixelAddress>> dp_list_per_servo サーボごとのアドレス群
+ * @param vector<vector<int64_t>> data_vec_list サーボごとのデータ群
+ * @return bool 通信成功判定
+ */
+bool DynamixelCommunicator::BulkWrite(const vector<uint8_t>& servo_id_list, const vector<vector<DynamixelAddress>>& dp_list_per_servo, const vector<vector<int64_t>>& data_vec_list) {
+    if (servo_id_list.size() != dp_list_per_servo.size() || servo_id_list.size() != data_vec_list.size()) {
+        if (verbose_) printf("Bulk Write Error(mismatch id/addr/data num): id=%d, addr=%d, data=%d\n", (int)servo_id_list.size(), (int)dp_list_per_servo.size(), (int)data_vec_list.size());
+        return false;
+    }
+    map<uint8_t, vector<DynamixelAddress>> id_dp_list_map;
+    map<uint8_t, vector<int64_t>> id_data_vec_map;
+    for (size_t i=0; i<servo_id_list.size(); i++) {
+        const uint8_t id = servo_id_list[i];
+        if (id_dp_list_map.count(id)) {
+            if (verbose_) printf("Bulk Write Error(duplicate id): ID %d\n", id);
+            return false;
+        }
+        id_dp_list_map[id] = dp_list_per_servo[i];
+        id_data_vec_map[id] = data_vec_list[i];
+    }
+    return BulkWrite(id_dp_list_map, id_data_vec_map);
 }
 
 /** @fn

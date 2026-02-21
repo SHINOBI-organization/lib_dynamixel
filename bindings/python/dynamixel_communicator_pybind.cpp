@@ -151,6 +151,14 @@ PYBIND11_MODULE(_mylib_dynamixel, m) {
            py::arg("addr"), py::arg("id_value_map"))
       .def("Read", py::overload_cast<DynamixelAddress, uint8_t>(&DynamixelCommunicator::Read),
            py::arg("addr"), py::arg("servo_id"))
+      .def("BulkRead", py::overload_cast<const std::map<uint8_t, DynamixelAddress>&>(&DynamixelCommunicator::BulkRead),
+           py::arg("id_addr_map"))
+      .def("BulkRead_fast", py::overload_cast<const std::map<uint8_t, DynamixelAddress>&>(&DynamixelCommunicator::BulkRead_fast),
+           py::arg("id_addr_map"))
+      .def("BulkWrite", py::overload_cast<const std::map<uint8_t, DynamixelAddress>&, const std::map<uint8_t, int64_t>&>(&DynamixelCommunicator::BulkWrite),
+           py::arg("id_addr_map"), py::arg("id_value_map"))
+      .def("BulkWrite", py::overload_cast<const std::vector<uint8_t>&, const std::vector<DynamixelAddress>&, const std::vector<int64_t>&>(&DynamixelCommunicator::BulkWrite),
+           py::arg("servo_id_list"), py::arg("addr_list"), py::arg("value_list"))
       .def("SyncRead", py::overload_cast<DynamixelAddress, const std::vector<uint8_t>&>(&DynamixelCommunicator::SyncRead),
            py::arg("addr"), py::arg("servo_id_list"))
       .def("SyncRead_fast", py::overload_cast<DynamixelAddress, const std::vector<uint8_t>&>(&DynamixelCommunicator::SyncRead_fast),
@@ -165,6 +173,14 @@ PYBIND11_MODULE(_mylib_dynamixel, m) {
            py::arg("addr_list"), py::arg("id_values_map"))
       .def("Read", py::overload_cast<const std::vector<DynamixelAddress>&, uint8_t>(&DynamixelCommunicator::Read),
            py::arg("addr_list"), py::arg("servo_id"))
+      .def("BulkRead", py::overload_cast<const std::map<uint8_t, std::vector<DynamixelAddress>>&>(&DynamixelCommunicator::BulkRead),
+           py::arg("id_addr_list_map"))
+      .def("BulkRead_fast", py::overload_cast<const std::map<uint8_t, std::vector<DynamixelAddress>>&>(&DynamixelCommunicator::BulkRead_fast),
+           py::arg("id_addr_list_map"))
+      .def("BulkWrite", py::overload_cast<const std::map<uint8_t, std::vector<DynamixelAddress>>&, const std::map<uint8_t, std::vector<int64_t>>&>(&DynamixelCommunicator::BulkWrite),
+           py::arg("id_addr_list_map"), py::arg("id_values_map"))
+      .def("BulkWrite", py::overload_cast<const std::vector<uint8_t>&, const std::vector<std::vector<DynamixelAddress>>&, const std::vector<std::vector<int64_t>>&>(&DynamixelCommunicator::BulkWrite),
+           py::arg("servo_id_list"), py::arg("addr_list_per_servo"), py::arg("value_matrix"))
       .def("SyncRead", py::overload_cast<const std::vector<DynamixelAddress>&, const std::vector<uint8_t>&>(&DynamixelCommunicator::SyncRead),
            py::arg("addr_list"), py::arg("servo_id_list"))
       .def("SyncRead_fast", py::overload_cast<const std::vector<DynamixelAddress>&, const std::vector<uint8_t>&>(&DynamixelCommunicator::SyncRead_fast),

@@ -58,15 +58,23 @@ class DynamixelCommunicator {
         bool SyncWrite(DynamixelAddress, const vector<uint8_t>&, const vector<int64_t>&);
         bool SyncWrite(DynamixelAddress, const map<uint8_t, int64_t>&);
         int64_t               Read         (DynamixelAddress, uint8_t               );
+        map<uint8_t, int64_t> BulkRead     (const map<uint8_t, DynamixelAddress>&);
+        map<uint8_t, int64_t> BulkRead_fast(const map<uint8_t, DynamixelAddress>&);
         map<uint8_t, int64_t> SyncRead     (DynamixelAddress, const vector<uint8_t>&);
         map<uint8_t, int64_t> SyncRead_fast(DynamixelAddress, const vector<uint8_t>&);
+        bool BulkWrite(const map<uint8_t, DynamixelAddress>&, const map<uint8_t, int64_t>&);
+        bool BulkWrite(const vector<uint8_t>&, const vector<DynamixelAddress>&, const vector<int64_t>&);
         // 複数パラメータ同時
         bool Write    (const vector<DynamixelAddress>&, uint8_t               , const vector<int64_t>&        );
         bool SyncWrite(const vector<DynamixelAddress>&, const vector<uint8_t>&, const vector<vector<int64_t>>&);
         bool SyncWrite(const vector<DynamixelAddress>&, const map<uint8_t, vector<int64_t>>&);
         vector<int64_t>               Read         (const vector<DynamixelAddress>&, uint8_t               );
+        map<uint8_t, vector<int64_t>> BulkRead     (const map<uint8_t, vector<DynamixelAddress>>&);
+        map<uint8_t, vector<int64_t>> BulkRead_fast(const map<uint8_t, vector<DynamixelAddress>>&);
         map<uint8_t, vector<int64_t>> SyncRead     (const vector<DynamixelAddress>&, const vector<uint8_t>&);
         map<uint8_t, vector<int64_t>> SyncRead_fast(const vector<DynamixelAddress>&, const vector<uint8_t>&);
+        bool BulkWrite(const map<uint8_t, vector<DynamixelAddress>>&, const map<uint8_t, vector<int64_t>>&);
+        bool BulkWrite(const vector<uint8_t>&, const vector<vector<DynamixelAddress>>&, const vector<vector<int64_t>>&);
         // Retry付
         bool            tryPing (uint8_t servo_id);
         bool            tryWrite(DynamixelAddress, uint8_t, int64_t);
