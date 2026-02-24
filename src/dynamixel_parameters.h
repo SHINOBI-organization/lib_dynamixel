@@ -133,6 +133,37 @@ enum DynamixelHardwareErrorIndex {
   HARDWARE_ERROR_ELECTRONICAL_SHOCK = 4,
   HARDWARE_ERROR_OVERLOAD           = 5,
 };
+enum DynamixelShutdownIndex {
+  SHUTDOWN_INPUT_VOLTAGE      = 0,  // X/P/Pro
+  SHUTDOWN_MOTOR_HALL_SENSOR  = 1,  // P/Pro
+  SHUTDOWN_OVERHEATING        = 2,  // X/P/Pro
+  SHUTDOWN_MOTOR_ENCODER      = 3,  // X/P/Pro
+  SHUTDOWN_ELECTRICAL_SHOCK   = 4,  // X/P/Pro
+  SHUTDOWN_OVERLOAD           = 5,  // X/P/Pro
+};
+enum DynamixelDriveModeIndex {
+  DRV_MODE_REVERSE_MODE       = 0,  // X/P/Y
+  DRV_MODE_PROFILE_TIME_BASED = 2,  // X/P/Y
+  DRV_MODE_AUTO_ACTIVATE      = 3,  // X/P
+  DRV_MODE_DYNAMIC_BRAKE      = 6,  // Y
+};
+enum DynamixelStartupConfigIndex {
+  STARTUP_CONFIG_TORQUE_ON   = 0,  // X/P/Y // 正式には...
+  STARTUP_CONFIG_RAM_RESTORE = 1,  // X/P
+};
+enum DynamixelMovingStatusIndex {
+  MOVING_STATUS_IN_POSITION     = 0,
+  MOVING_STATUS_PROFILE_ONGOING = 1,
+  MOVING_STATUS_FOLLOWING_ERROR = 3,
+  MOVING_STATUS_PROFILE_LOW     = 4,
+  MOVING_STATUS_PROFILE_HIGH    = 5,
+};
+enum DynamixelMovingProfileType {
+  MOVING_PROFILE_NONE        = 0,
+  MOVING_PROFILE_RECTANGULAR = 1,
+  MOVING_PROFILE_TRIANGULAR  = 2,
+  MOVING_PROFILE_TRAPEZOIDAL = 3,
+};
 enum DynamixelDataType {
   TYPE_INT8,
   TYPE_UINT8,
@@ -190,6 +221,7 @@ class DynamixelAddress {
 // dynamixel common
 struct AddrCommon {
     static inline DynamixelAddress model_number      {  0, TYPE_UINT16};
+    static inline DynamixelAddress firmware_version  {  6, TYPE_UINT8 };
     static inline DynamixelAddress id                {  7, TYPE_UINT8 };
 };
 
@@ -201,6 +233,7 @@ struct AddrX : AddrCommon{
     static inline DynamixelAddress drive_mode        { 10, TYPE_UINT8 }; 
     static inline DynamixelAddress operating_mode    { 11, TYPE_UINT8 };
     static inline DynamixelAddress shadow_id         { 12, TYPE_UINT8 }; 
+    static inline DynamixelAddress protocol_version  { 13, TYPE_UINT8 };
     static inline DynamixelAddress homing_offset         { 20, TYPE_INT32 , UNIT_POSITION       };
     static inline DynamixelAddress moving_threshold      { 24, TYPE_UINT32, UNIT_VELOCITY       }; 
     static inline DynamixelAddress temperature_limit     { 31, TYPE_UINT8 , UNIT_TEMPERATURE    };
@@ -214,6 +247,8 @@ struct AddrX : AddrCommon{
     static inline DynamixelAddress external_port_mode_1  { 56, TYPE_UINT8 };
     static inline DynamixelAddress external_port_mode_2  { 57, TYPE_UINT8 };
     static inline DynamixelAddress external_port_mode_3  { 58, TYPE_UINT8 };
+    static inline DynamixelAddress startup_configuration { 60, TYPE_UINT8 };
+    static inline DynamixelAddress pwm_slope             { 62, TYPE_UINT8 };
     static inline DynamixelAddress shutdown              { 63, TYPE_UINT8 };
     static inline DynamixelAddress torque_enable         { 64, TYPE_UINT8 };
     static inline DynamixelAddress led                   { 65, TYPE_UINT8 };
@@ -262,6 +297,7 @@ struct AddrP : AddrCommon {
     static inline DynamixelAddress drive_mode        { 10, TYPE_UINT8 }; 
     static inline DynamixelAddress operating_mode    { 11, TYPE_UINT8 };
     static inline DynamixelAddress shadow_id         { 12, TYPE_UINT8 }; 
+    static inline DynamixelAddress protocol_version  { 13, TYPE_UINT8 };
     static inline DynamixelAddress homing_offset         { 20, TYPE_INT32 , UNIT_POSITION    };
     static inline DynamixelAddress moving_threshold      { 24, TYPE_UINT32, UNIT_VELOCITY    };
     static inline DynamixelAddress temperature_limit     { 31, TYPE_UINT8 , UNIT_TEMPERATURE };
@@ -277,6 +313,7 @@ struct AddrP : AddrCommon {
     static inline DynamixelAddress external_port_mode_2  { 57, TYPE_UINT8 };
     static inline DynamixelAddress external_port_mode_3  { 58, TYPE_UINT8 };
     static inline DynamixelAddress external_port_mode_4  { 59, TYPE_UINT8 };
+    static inline DynamixelAddress startup_configuration { 60, TYPE_UINT8 };
     static inline DynamixelAddress shutdown              { 63, TYPE_UINT8 };
     // == Indirect Address ==
     static inline DynamixelAddress torque_enable         {512, TYPE_UINT8 };
@@ -386,5 +423,6 @@ bool has_external_port(uint16_t model_num);
 
 // あとでちゃんと調べる．
 bool has_current_sensor(uint16_t model_num);
+bool has_pwm_slope(uint16_t model_num);
 
 #endif /* DYNAMIXEL_PARAMETERS_H_ */
