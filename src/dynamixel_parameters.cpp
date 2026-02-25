@@ -54,7 +54,7 @@ double DynamixelAddress::pulse2val(int64_t pulse, uint16_t model_num) const {
     case UNIT_TEMPERATURE:           return pulse * 1.0 /*degC*/;
     case UNIT_PWM:                   return pulse * 100.0 / pwm_resolution(model_num) /*%*/;
     case UNIT_RETURN_DELAY_TIME:     return pulse * 2.0 /*us*/;
-    case UNIT_BUS_WATCHDOG:          return pulse == 0xFF ? -1.0 : pulse * 20.0 /*ms*/;
+    case UNIT_BUS_WATCHDOG:          return pulse * 20.0 /*ms*/;
     case UNIT_REALTIME_TICK:         return pulse * 1.0 /*ms*/;
     default:                         return pulse;
   }

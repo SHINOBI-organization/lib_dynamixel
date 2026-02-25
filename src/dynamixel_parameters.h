@@ -330,7 +330,7 @@ struct AddrP : AddrCommon {
     static inline DynamixelAddress position_p_gain       {532, TYPE_UINT16};
     static inline DynamixelAddress feedforward_2nd_gain  {536, TYPE_UINT16};
     static inline DynamixelAddress feedforward_1st_gain  {538, TYPE_UINT16};
-    static inline DynamixelAddress bus_watchdog          {546, TYPE_UINT8 , UNIT_BUS_WATCHDOG };
+    static inline DynamixelAddress bus_watchdog          {546, TYPE_INT8  , UNIT_BUS_WATCHDOG };
     static inline DynamixelAddress goal_pwm              {548, TYPE_INT16 , UNIT_PWM          };
     static inline DynamixelAddress goal_current          {550, TYPE_INT16 , UNIT_CURRENT      };
     static inline DynamixelAddress goal_velocity         {552, TYPE_INT32 , UNIT_VELOCITY     };
@@ -416,7 +416,7 @@ struct AddrPro : AddrCommon {
     static inline auto position_i_gain      = position_p_gain.make_dummy();
     static inline auto feedforward_2nd_gain = position_p_gain.make_dummy();
     static inline auto feedforward_1st_gain = position_p_gain.make_dummy();
-    static inline auto bus_watchdog         = DynamixelAddress(  0, TYPE_UINT8 , UNIT_BUS_WATCHDOG ).make_dummy();
+    static inline auto bus_watchdog         = DynamixelAddress(  0, TYPE_INT8  , UNIT_BUS_WATCHDOG ).make_dummy();
 };
 
 bool has_external_port(uint16_t model_num);
